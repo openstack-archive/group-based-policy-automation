@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = gbpautomation
+omit = gbpautomation/tests/*,gbpautomation/openstack/*
+
+[report]
+ignore-errors = True
