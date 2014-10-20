@@ -119,8 +119,8 @@ policy_classifier_template = '''
                 "protocol": "tcp",
                 "port_range": "8000-9000",
                 "direction": "bi"
-        }
-     }
+      }
+    }
   }
 }
 '''
@@ -138,8 +138,8 @@ policy_action_template = '''
                 "description": "test policy action resource",
                 "action_type": "redirect",
                 "action_value": "7890"
-        }
-     }
+      }
+    }
   }
 }
 '''
@@ -147,7 +147,7 @@ policy_action_template = '''
 policy_rule_template = '''
 {
  "AWSTemplateFormatVersion" : "2010-09-09",
-  "Description" : "Template to test neutron l3 policy",
+  "Description" : "Template to test neutron policy rule",
   "Parameters" : {},
   "Resources" : {
   "policy_rule": {
@@ -158,6 +158,26 @@ policy_rule_template = '''
           "enabled": True,
           "policy_classifier_id": "7890",
           "policy_actions": ['3456', '1234']
+      }
+    }
+  }
+}
+'''
+
+contract_template = '''
+{
+ "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test contract",
+  "Parameters" : {},
+  "Resources" : {
+  "contract": {
+      "Type": "OS::Neutron::Contract",
+      "Properties": {
+          "name": "test-contract",
+          "description": "test contract resource",
+          "parent_id": "3456",
+          "child_contracts": ["7890", "1234"],
+          "policy_rules": ["2345", "6789"]
       }
     }
   }
@@ -263,10 +283,10 @@ class EndpointTest(HeatTestCase):
         rsrc = self.create_endpoint()
         gbpclient.Client.show_endpoint('5678').MultipleTimes(
         ).AndReturn(
-            {'endpoint': {'neutron_port_id': '1234'}})
+            {'endpoint': {'port_id': '1234'}})
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
-        self.assertEqual('1234', rsrc.FnGetAtt('neutron_port_id'))
+        self.assertEqual('1234', rsrc.FnGetAtt('port_id'))
         self.m.VerifyAll()
 
     def test_attribute_failed(self):
@@ -971,6 +991,118 @@ class PolicyRuleTest(HeatTestCase):
 
         update_template = copy.deepcopy(rsrc.t)
         update_template['Properties']['enabled'] = False
+        scheduler.TaskRunner(rsrc.update, update_template)()
+
+        self.m.VerifyAll()
+
+
+class ContractTest(HeatTestCase):
+
+    def setUp(self):
+        super(ContractTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client, 'create_contract')
+        self.m.StubOutWithMock(gbpclient.Client, 'delete_contract')
+        self.m.StubOutWithMock(gbpclient.Client, 'show_contract')
+        self.m.StubOutWithMock(gbpclient.Client, 'update_contract')
+        self.stub_keystoneclient()
+
+    def create_contract(self):
+        gbpclient.Client.create_contract({
+            'contract': {
+                "name": "test-contract",
+                "description": "test contract resource",
+                "parent_id": "3456",
+                "child_contracts": ["7890", "1234"],
+                "policy_rules": ["2345", "6789"]
+            }
+        }).AndReturn({'contract': {'id': '5678'}})
+
+        snippet = template_format.parse(contract_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        return grouppolicy.Contract(
+            'contract', resource_defns['contract'], stack)
+
+    def test_create(self):
+        rsrc = self.create_contract()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_failed(self):
+        gbpclient.Client.create_contract({
+            'contract': {
+                "name": "test-contract",
+                "description": "test contract resource",
+                "parent_id": "3456",
+                "child_contracts": ["7890", "1234"],
+                "policy_rules": ["2345", "6789"]
+            }
+        }).AndRaise(grouppolicy.NeutronClientException())
+        self.m.ReplayAll()
+
+        snippet = template_format.parse(contract_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        rsrc = grouppolicy.Contract(
+            'contract', resource_defns['contract'], stack)
+
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.create))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete(self):
+        gbpclient.Client.delete_contract('5678')
+        gbpclient.Client.show_contract('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_contract()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_already_gone(self):
+        gbpclient.Client.delete_contract('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_contract()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_failed(self):
+        gbpclient.Client.delete_contract('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=400))
+
+        rsrc = self.create_contract()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.delete))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_update(self):
+        rsrc = self.create_contract()
+        gbpclient.Client.update_contract(
+            '5678', {'contract': {'child_contracts': ["1234"]}})
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+
+        update_template = copy.deepcopy(rsrc.t)
+        update_template['Properties']['child_contracts'] = ["1234"]
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
