@@ -3,12 +3,14 @@
 # process, which may cause wedges in the gate later.
 
 -e git://github.com/openstack/heat.git@stable/juno#egg=heat
+-e git://github.com/stackforge/python-group-based-policy-client.git@master#egg=gbpclient
 # Hacking already pins down pep8, pyflakes and flake8
 hacking>=0.8.0,<0.9
 coverage>=3.6
 discover
 lockfile>=0.8
 mock>=1.0
+python-subunit>=0.0.18
 mox>=0.5.3
 MySQL-python
 oslosphinx>=2.2.0  # Apache-2.0
