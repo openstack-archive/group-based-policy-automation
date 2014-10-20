@@ -11,6 +11,7 @@
 #    under the License.
 
 import copy
+import six
 
 from gbpautomation.heat.engine.resources.neutron import grouppolicy
 from gbpclient.v2_0 import client as gbpclient
@@ -98,6 +99,65 @@ l3_policy_template = '''
         "ip_version": "4",
         "ip_pool": "10.20.20.0",
         "subnet_prefix_length": 24
+      }
+    }
+  }
+}
+'''
+
+policy_classifier_template = '''
+{
+ "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test neutron policy classifier",
+  "Parameters" : {},
+  "Resources" : {
+  "policy_classifier": {
+      "Type": "OS::Neutron::PolicyClassifier",
+      "Properties": {
+                "name": "test-policy-classifier",
+                "description": "test policy classifier resource",
+                "protocol": "tcp",
+                "port_range": "8000-9000",
+                "direction": "bi"
+        }
+     }
+  }
+}
+'''
+
+policy_action_template = '''
+{
+ "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test neutron policy action",
+  "Parameters" : {},
+  "Resources" : {
+  "policy_action": {
+      "Type": "OS::Neutron::PolicyAction",
+      "Properties": {
+                "name": "test-policy-action",
+                "description": "test policy action resource",
+                "action_type": "redirect",
+                "action_value": "7890"
+        }
+     }
+  }
+}
+'''
+
+policy_rule_template = '''
+{
+ "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test neutron l3 policy",
+  "Parameters" : {},
+  "Resources" : {
+  "policy_rule": {
+      "Type": "OS::Neutron::PolicyRule",
+      "Properties": {
+          "name": "test-policy-rule",
+          "description": "test policy rule resource",
+          "enabled": True,
+          "policy_classifier_id": "7890",
+          "policy_actions": ['3456', '1234']
       }
     }
   }
@@ -195,7 +255,7 @@ class EndpointTest(HeatTestCase):
                                   scheduler.TaskRunner(rsrc.delete))
         self.assertEqual(
             'NeutronClientException: An unknown exception occurred.',
-            str(error))
+            six.text_type(error))
         self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
         self.m.VerifyAll()
 
@@ -344,17 +404,6 @@ class EndpointGroupTest(HeatTestCase):
         self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
         self.m.VerifyAll()
 
-    def test_attribute_failed(self):
-        rsrc = self.create_endpoint_group()
-        self.m.ReplayAll()
-        scheduler.TaskRunner(rsrc.create)()
-        error = self.assertRaises(exception.InvalidTemplateAttribute,
-                                  rsrc.FnGetAtt, 'l3_policy_id')
-        self.assertEqual(
-            'The Referenced Attribute (endpoint_group l3_policy_id) is '
-            'incorrect.', str(error))
-        self.m.VerifyAll()
-
     def test_update(self):
         rsrc = self.create_endpoint_group()
         gbpclient.Client.update_endpoint_group(
@@ -461,17 +510,6 @@ class L2PolicyTest(HeatTestCase):
             'NeutronClientException: An unknown exception occurred.',
             str(error))
         self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
-        self.m.VerifyAll()
-
-    def test_attribute_failed(self):
-        rsrc = self.create_l2_policy()
-        self.m.ReplayAll()
-        scheduler.TaskRunner(rsrc.create)()
-        error = self.assertRaises(exception.InvalidTemplateAttribute,
-                                  rsrc.FnGetAtt, 'endpoint_id')
-        self.assertEqual(
-            'The Referenced Attribute (l2_policy endpoint_id) is '
-            'incorrect.', str(error))
         self.m.VerifyAll()
 
     def test_update(self):
@@ -586,17 +624,6 @@ class L3PolicyTest(HeatTestCase):
         self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
         self.m.VerifyAll()
 
-    def test_attribute_failed(self):
-        rsrc = self.create_l3_policy()
-        self.m.ReplayAll()
-        scheduler.TaskRunner(rsrc.create)()
-        error = self.assertRaises(exception.InvalidTemplateAttribute,
-                                  rsrc.FnGetAtt, 'subnet_id')
-        self.assertEqual(
-            'The Referenced Attribute (l3_policy subnet_id) is '
-            'incorrect.', str(error))
-        self.m.VerifyAll()
-
     def test_update(self):
         rsrc = self.create_l3_policy()
         gbpclient.Client.update_l3_policy(
@@ -606,6 +633,344 @@ class L3PolicyTest(HeatTestCase):
 
         update_template = copy.deepcopy(rsrc.t)
         update_template['Properties']['subnet_prefix_length'] = 28
+        scheduler.TaskRunner(rsrc.update, update_template)()
+
+        self.m.VerifyAll()
+
+
+class PolicyClassifierTest(HeatTestCase):
+
+    def setUp(self):
+        super(PolicyClassifierTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'create_policy_classifier')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'delete_policy_classifier')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'show_policy_classifier')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'update_policy_classifier')
+        self.stub_keystoneclient()
+
+    def create_policy_classifier(self):
+        gbpclient.Client.create_policy_classifier({
+            'policy_classifier': {
+                "name": "test-policy-classifier",
+                "description": "test policy classifier resource",
+                "protocol": "tcp",
+                "port_range": "8000-9000",
+                "direction": "bi"
+            }
+        }).AndReturn({'policy_classifier': {'id': '5678'}})
+
+        snippet = template_format.parse(policy_classifier_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        return grouppolicy.PolicyClassifier(
+            'policy_classifier', resource_defns['policy_classifier'], stack)
+
+    def test_create(self):
+        rsrc = self.create_policy_classifier()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_failed(self):
+        gbpclient.Client.create_policy_classifier({
+            'policy_classifier': {
+                "name": "test-policy-classifier",
+                "description": "test policy classifier resource",
+                "protocol": "tcp",
+                "port_range": "8000-9000",
+                "direction": "bi"
+            }
+        }).AndRaise(grouppolicy.NeutronClientException())
+        self.m.ReplayAll()
+
+        snippet = template_format.parse(policy_classifier_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        rsrc = grouppolicy.PolicyClassifier(
+            'policy_classifier', resource_defns['policy_classifier'], stack)
+
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.create))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete(self):
+        gbpclient.Client.delete_policy_classifier('5678')
+        gbpclient.Client.show_policy_classifier('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_policy_classifier()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_already_gone(self):
+        gbpclient.Client.delete_policy_classifier('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_policy_classifier()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_failed(self):
+        gbpclient.Client.delete_policy_classifier('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=400))
+
+        rsrc = self.create_policy_classifier()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.delete))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_update(self):
+        rsrc = self.create_policy_classifier()
+        gbpclient.Client.update_policy_classifier(
+            '5678', {'policy_classifier': {'protocol': 'udp'}})
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+
+        update_template = copy.deepcopy(rsrc.t)
+        update_template['Properties']['protocol'] = 'udp'
+        scheduler.TaskRunner(rsrc.update, update_template)()
+
+        self.m.VerifyAll()
+
+
+class PolicyActionTest(HeatTestCase):
+
+    def setUp(self):
+        super(PolicyActionTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client, 'create_policy_action')
+        self.m.StubOutWithMock(gbpclient.Client, 'delete_policy_action')
+        self.m.StubOutWithMock(gbpclient.Client, 'show_policy_action')
+        self.m.StubOutWithMock(gbpclient.Client, 'update_policy_action')
+        self.stub_keystoneclient()
+
+    def create_policy_action(self):
+        gbpclient.Client.create_policy_action({
+            'policy_action': {
+                "name": "test-policy-action",
+                "description": "test policy action resource",
+                "action_type": "redirect",
+                "action_value": "7890"
+            }
+        }).AndReturn({'policy_action': {'id': '5678'}})
+
+        snippet = template_format.parse(policy_action_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        return grouppolicy.PolicyAction(
+            'policy_action', resource_defns['policy_action'], stack)
+
+    def test_create(self):
+        rsrc = self.create_policy_action()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_failed(self):
+        gbpclient.Client.create_policy_action({
+            'policy_action': {
+                "name": "test-policy-action",
+                "description": "test policy action resource",
+                "action_type": "redirect",
+                "action_value": "7890"
+            }
+        }).AndRaise(grouppolicy.NeutronClientException())
+        self.m.ReplayAll()
+
+        snippet = template_format.parse(policy_action_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        rsrc = grouppolicy.PolicyAction(
+            'policy_action', resource_defns['policy_action'], stack)
+
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.create))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete(self):
+        gbpclient.Client.delete_policy_action('5678')
+        gbpclient.Client.show_policy_action('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_policy_action()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_already_gone(self):
+        gbpclient.Client.delete_policy_action('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_policy_action()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_failed(self):
+        gbpclient.Client.delete_policy_action('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=400))
+
+        rsrc = self.create_policy_action()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.delete))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_update(self):
+        rsrc = self.create_policy_action()
+        gbpclient.Client.update_policy_action(
+            '5678', {'policy_action': {'action_type': 'allow'}})
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+
+        update_template = copy.deepcopy(rsrc.t)
+        update_template['Properties']['action_type'] = 'allow'
+        scheduler.TaskRunner(rsrc.update, update_template)()
+
+        self.m.VerifyAll()
+
+
+class PolicyRuleTest(HeatTestCase):
+
+    def setUp(self):
+        super(PolicyRuleTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client, 'create_policy_rule')
+        self.m.StubOutWithMock(gbpclient.Client, 'delete_policy_rule')
+        self.m.StubOutWithMock(gbpclient.Client, 'show_policy_rule')
+        self.m.StubOutWithMock(gbpclient.Client, 'update_policy_rule')
+        self.stub_keystoneclient()
+
+    def create_policy_rule(self):
+        gbpclient.Client.create_policy_rule({
+            'policy_rule': {
+                "name": "test-policy-rule",
+                "description": "test policy rule resource",
+                "enabled": True,
+                "policy_classifier_id": "7890",
+                "policy_actions": ['3456', '1234']
+            }
+        }).AndReturn({'policy_rule': {'id': '5678'}})
+
+        snippet = template_format.parse(policy_rule_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        return grouppolicy.PolicyRule(
+            'policy_rule', resource_defns['policy_rule'], stack)
+
+    def test_create(self):
+        rsrc = self.create_policy_rule()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_failed(self):
+        gbpclient.Client.create_policy_rule({
+            'policy_rule': {
+                "name": "test-policy-rule",
+                "description": "test policy rule resource",
+                "enabled": True,
+                "policy_classifier_id": "7890",
+                "policy_actions": ['3456', '1234']
+            }
+        }).AndRaise(grouppolicy.NeutronClientException())
+        self.m.ReplayAll()
+
+        snippet = template_format.parse(policy_rule_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        rsrc = grouppolicy.PolicyRule(
+            'policy_rule', resource_defns['policy_rule'], stack)
+
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.create))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete(self):
+        gbpclient.Client.delete_policy_rule('5678')
+        gbpclient.Client.show_policy_rule('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_policy_rule()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_already_gone(self):
+        gbpclient.Client.delete_policy_rule('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_policy_rule()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_failed(self):
+        gbpclient.Client.delete_policy_rule('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=400))
+
+        rsrc = self.create_policy_rule()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.delete))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_update(self):
+        rsrc = self.create_policy_rule()
+        gbpclient.Client.update_policy_rule(
+            '5678', {'policy_rule': {'enabled': False}})
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+
+        update_template = copy.deepcopy(rsrc.t)
+        update_template['Properties']['enabled'] = False
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
