@@ -585,6 +585,84 @@ class PolicyRule(gbpresource.GBPResource):
                 self.resource_id, {'policy_rule': prop_diff})
 
 
+class Contract(gbpresource.GBPResource):
+
+    PROPERTIES = (
+        TENANT_ID, NAME, DESCRIPTION, PARENT_ID, CHILD_CONTRACTS,
+        POLICY_RULES
+    ) = (
+        'tenant_id', 'name', 'description', 'parent_id', 'child_contracts',
+        'policy_rules'
+    )
+
+    properties_schema = {
+        TENANT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Tenant id of the contract.')
+        ),
+        NAME: properties.Schema(
+            properties.Schema.STRING,
+            _('Name of the contract.'),
+            update_allowed=True
+        ),
+        DESCRIPTION: properties.Schema(
+            properties.Schema.STRING,
+            _('Description of the contract.'),
+            update_allowed=True
+        ),
+        PARENT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Parent id of the contract.'),
+            required=True, update_allowed=False
+        ),
+        CHILD_CONTRACTS: properties.Schema(
+            properties.Schema.LIST,
+            _('List of child contracts.'),
+            default=None, update_allowed=True
+        ),
+        POLICY_RULES: properties.Schema(
+            properties.Schema.LIST,
+            _('List of policy rules.'),
+            default=None, update_allowed=True
+        )
+    }
+
+    def _show_resource(self):
+        client = self.grouppolicy()
+        contract_id = self.resource_id
+        return client.show_contract(contract_id)['contract']
+
+    def handle_create(self):
+        client = self.grouppolicy()
+
+        props = {}
+        for key in self.properties:
+            if self.properties.get(key) is not None:
+                props[key] = self.properties.get(key)
+
+        contract = client.create_contract(
+            {'contract': props})['contract']
+
+        self.resource_id_set(contract['id'])
+
+    def handle_delete(self):
+
+        client = self.grouppolicy()
+        contract_id = self.resource_id
+
+        try:
+            client.delete_contract(contract_id)
+        except NeutronClientException as ex:
+            self.client_plugin().ignore_not_found(ex)
+        else:
+            return self._delete_task()
+
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        if prop_diff:
+            self.grouppolicy().update_contract(
+                self.resource_id, {'contract': prop_diff})
+
+
 def resource_mapping():
     return {
         'OS::Neutron::Endpoint': Endpoint,
@@ -593,5 +671,6 @@ def resource_mapping():
         'OS::Neutron::L3Policy': L3Policy,
         'OS::Neutron::PolicyClassifier': PolicyClassifier,
         'OS::Neutron::PolicyAction': PolicyAction,
-        'OS::Neutron::PolicyRule': PolicyRule
+        'OS::Neutron::PolicyRule': PolicyRule,
+        'OS::Neutron::Contract': Contract
     }
