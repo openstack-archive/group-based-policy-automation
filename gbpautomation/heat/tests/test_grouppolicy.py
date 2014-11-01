@@ -184,6 +184,25 @@ contract_template = '''
 }
 '''
 
+network_service_policy_template = '''
+{
+ "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test network service policy",
+  "Parameters" : {},
+  "Resources" : {
+  "network_service_policy": {
+      "Type": "OS::Neutron::NetworkServicePolicy",
+      "Properties": {
+          "name": "test-nsp",
+          "description": "test NSP resource",
+          "network_service_params": [{'type': 'ip_single', 'name': 'vip',
+                                      'value': 'self_subnet'}]
+      }
+    }
+  }
+}
+'''
+
 
 class EndpointTest(HeatTestCase):
 
@@ -1103,6 +1122,126 @@ class ContractTest(HeatTestCase):
 
         update_template = copy.deepcopy(rsrc.t)
         update_template['Properties']['child_contracts'] = ["1234"]
+        scheduler.TaskRunner(rsrc.update, update_template)()
+
+        self.m.VerifyAll()
+
+
+class NetworkServicePolicyTest(HeatTestCase):
+
+    def setUp(self):
+        super(NetworkServicePolicyTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'create_network_service_policy')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'delete_network_service_policy')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'show_network_service_policy')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'update_network_service_policy')
+        self.stub_keystoneclient()
+
+    def create_network_service_policy(self):
+        gbpclient.Client.create_network_service_policy({
+            'network_service_policy': {
+                "name": "test-nsp",
+                "description": "test NSP resource",
+                "network_service_params": [
+                    {'type': 'ip_single', 'name': 'vip',
+                     'value': 'self_subnet'}]
+            }
+        }).AndReturn({'network_service_policy': {'id': '5678'}})
+
+        snippet = template_format.parse(network_service_policy_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        return grouppolicy.NetworkServicePolicy(
+            'network_service_policy',
+            resource_defns['network_service_policy'], stack)
+
+    def test_create(self):
+        rsrc = self.create_network_service_policy()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_failed(self):
+        gbpclient.Client.create_network_service_policy({
+            'network_service_policy': {
+                "name": "test-nsp",
+                "description": "test NSP resource",
+                "network_service_params": [
+                    {'type': 'ip_single', 'name': 'vip',
+                     'value': 'self_subnet'}]
+            }
+        }).AndRaise(grouppolicy.NeutronClientException())
+        self.m.ReplayAll()
+
+        snippet = template_format.parse(network_service_policy_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        rsrc = grouppolicy.NetworkServicePolicy(
+            'network_service_policy',
+            resource_defns['network_service_policy'], stack)
+
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.create))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete(self):
+        gbpclient.Client.delete_network_service_policy('5678')
+        gbpclient.Client.show_network_service_policy('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_network_service_policy()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_already_gone(self):
+        gbpclient.Client.delete_network_service_policy('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_network_service_policy()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_failed(self):
+        gbpclient.Client.delete_network_service_policy('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=400))
+
+        rsrc = self.create_network_service_policy()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.delete))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_update(self):
+        rsrc = self.create_network_service_policy()
+        gbpclient.Client.update_network_service_policy(
+            '5678', {'network_service_policy':
+                     {'network_service_params': [{'name': 'vip-update'}]}})
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+
+        update_template = copy.deepcopy(rsrc.t)
+        update_template['Properties']['network_service_params'] = [
+            {'name': 'vip-update'}]
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()

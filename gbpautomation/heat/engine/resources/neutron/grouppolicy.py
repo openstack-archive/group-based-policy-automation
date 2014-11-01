@@ -110,10 +110,10 @@ class EndpointGroup(gbpresource.GBPResource):
 
     PROPERTIES = (
         TENANT_ID, NAME, DESCRIPTION, L2_POLICY_ID,
-        PROVIDED_CONTRACTS, CONSUMED_CONTRACTS
+        PROVIDED_CONTRACTS, CONSUMED_CONTRACTS, NETWORK_SERVICE_POLICY_ID
     ) = (
         'tenant_id', 'name', 'description', 'l2_policy_id',
-        'provided_contracts', 'consumed_contracts'
+        'provided_contracts', 'consumed_contracts', 'network_service_policy_id'
     )
 
     properties_schema = {
@@ -145,6 +145,11 @@ class EndpointGroup(gbpresource.GBPResource):
             properties.Schema.LIST,
             _('Consumed contracts for the endpoint group.'),
             update_allowed=True
+        ),
+        NETWORK_SERVICE_POLICY_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Network service policy id of the endpoint group.'),
+            update_allowed=True, default=None
         )
     }
 
@@ -663,6 +668,73 @@ class Contract(gbpresource.GBPResource):
                 self.resource_id, {'contract': prop_diff})
 
 
+class NetworkServicePolicy(gbpresource.GBPResource):
+
+    PROPERTIES = (
+        TENANT_ID, NAME, DESCRIPTION, NETWORK_SERVICE_PARAMS
+    ) = (
+        'tenant_id', 'name', 'description', 'network_service_params'
+    )
+
+    properties_schema = {
+        TENANT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Tenant id of the network service policy.')
+        ),
+        NAME: properties.Schema(
+            properties.Schema.STRING,
+            _('Name of the network service policy.'),
+            update_allowed=True
+        ),
+        DESCRIPTION: properties.Schema(
+            properties.Schema.STRING,
+            _('Description of the network service policy.'),
+            update_allowed=True
+        ),
+        NETWORK_SERVICE_PARAMS: properties.Schema(
+            properties.Schema.LIST,
+            _('List of network service policy dicts.'),
+            default=None, update_allowed=True
+        )
+    }
+
+    def _show_resource(self):
+        client = self.grouppolicy()
+        nsp_id = self.resource_id
+        nsp = client.show_network_service_policy(nsp_id)
+        return nsp['network_service_policy']
+
+    def handle_create(self):
+        client = self.grouppolicy()
+
+        props = {}
+        for key in self.properties:
+            if self.properties.get(key) is not None:
+                props[key] = self.properties.get(key)
+
+        nsp = client.create_network_service_policy(
+            {'network_service_policy': props})['network_service_policy']
+
+        self.resource_id_set(nsp['id'])
+
+    def handle_delete(self):
+
+        client = self.grouppolicy()
+        nsp_id = self.resource_id
+
+        try:
+            client.delete_network_service_policy(nsp_id)
+        except NeutronClientException as ex:
+            self.client_plugin().ignore_not_found(ex)
+        else:
+            return self._delete_task()
+
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        if prop_diff:
+            self.grouppolicy().update_network_service_policy(
+                self.resource_id, {'network_service_policy': prop_diff})
+
+
 def resource_mapping():
     return {
         'OS::Neutron::Endpoint': Endpoint,
@@ -672,5 +744,6 @@ def resource_mapping():
         'OS::Neutron::PolicyClassifier': PolicyClassifier,
         'OS::Neutron::PolicyAction': PolicyAction,
         'OS::Neutron::PolicyRule': PolicyRule,
-        'OS::Neutron::Contract': Contract
+        'OS::Neutron::Contract': Contract,
+        'OS::Neutron::NetworkServicePolicy': NetworkServicePolicy
     }
