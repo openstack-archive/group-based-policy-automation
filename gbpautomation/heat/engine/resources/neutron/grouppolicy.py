@@ -21,12 +21,12 @@ from heat.engine import constraints
 from heat.engine import properties
 
 
-class Endpoint(gbpresource.GBPResource):
+class PolicyTarget(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, ENDPOINT_GROUP_ID
+        TENANT_ID, NAME, DESCRIPTION, POLICY_TARGET_GROUP_ID
     ) = (
-        'tenant_id', 'name', 'description', 'endpoint_group_id'
+        'tenant_id', 'name', 'description', 'policy_target_group_id'
     )
 
     ATTRIBUTES = (
@@ -38,21 +38,21 @@ class Endpoint(gbpresource.GBPResource):
     properties_schema = {
         TENANT_ID: properties.Schema(
             properties.Schema.STRING,
-            _('Tenant id of the endpoint.')
+            _('Tenant id of the policy target.')
         ),
         NAME: properties.Schema(
             properties.Schema.STRING,
-            _('Name of the endpoint.'),
+            _('Name of the policy target.'),
             update_allowed=True
         ),
         DESCRIPTION: properties.Schema(
             properties.Schema.STRING,
-            _('Description of the endpoint.'),
+            _('Description of the policy target.'),
             update_allowed=True
         ),
-        ENDPOINT_GROUP_ID: properties.Schema(
+        POLICY_TARGET_GROUP_ID: properties.Schema(
             properties.Schema.STRING,
-            _('Endpoint group id of the endpoint.'),
+            _('Policy target group id of the policy target.'),
             required=True,
             update_allowed=True
         )
@@ -60,14 +60,14 @@ class Endpoint(gbpresource.GBPResource):
 
     attributes_schema = {
         PORT_ID: attributes.Schema(
-            _("Neutron port id of this endpoint")
+            _("Neutron port id of this policy target")
         )
     }
 
     def _show_resource(self):
         client = self.grouppolicy()
-        ep_id = self.resource_id
-        return client.show_endpoint(ep_id)['endpoint']
+        pt_id = self.resource_id
+        return client.show_policy_target(pt_id)['policy_target']
 
     def handle_create(self):
         client = self.grouppolicy()
@@ -77,24 +77,25 @@ class Endpoint(gbpresource.GBPResource):
             if self.properties.get(key) is not None:
                 props[key] = self.properties.get(key)
 
-        ep = client.create_endpoint({'endpoint': props})['endpoint']
+        pt = client.create_policy_target(
+            {'policy_target': props})['policy_target']
 
-        self.resource_id_set(ep['id'])
+        self.resource_id_set(pt['id'])
 
     def _resolve_attribute(self, name):
         client = self.grouppolicy()
-        ep_id = self.resource_id
+        pt_id = self.resource_id
         if name == 'port_id':
-            return client.show_endpoint(ep_id)['endpoint']['port_id']
-        return super(Endpoint, self)._resolve_attribute(name)
+            return client.show_policy_target(pt_id)['policy_target']['port_id']
+        return super(PolicyTarget, self)._resolve_attribute(name)
 
     def handle_delete(self):
 
         client = self.grouppolicy()
-        ep_id = self.resource_id
+        pt_id = self.resource_id
 
         try:
-            client.delete_endpoint(ep_id)
+            client.delete_policy_target(pt_id)
         except NeutronClientException as ex:
             self.client_plugin().ignore_not_found(ex)
         else:
@@ -102,61 +103,62 @@ class Endpoint(gbpresource.GBPResource):
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
         if prop_diff:
-            self.grouppolicy().update_endpoint(
-                self.resource_id, {'endpoint': prop_diff})
+            self.grouppolicy().update_policy_target(
+                self.resource_id, {'policy_target': prop_diff})
 
 
-class EndpointGroup(gbpresource.GBPResource):
+class PolicyTargetGroup(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, L2_POLICY_ID,
-        PROVIDED_CONTRACTS, CONSUMED_CONTRACTS, NETWORK_SERVICE_POLICY_ID
+        TENANT_ID, NAME, DESCRIPTION, L2_POLICY_ID, PROVIDED_POLICY_RULE_SETS,
+        CONSUMED_POLICY_RULE_SETS, NETWORK_SERVICE_POLICY_ID
     ) = (
         'tenant_id', 'name', 'description', 'l2_policy_id',
-        'provided_contracts', 'consumed_contracts', 'network_service_policy_id'
+        'provided_policy_rule_sets', 'consumed_policy_rule_sets',
+        'network_service_policy_id'
     )
 
     properties_schema = {
         TENANT_ID: properties.Schema(
             properties.Schema.STRING,
-            _('Tenant id of the endpoint group.')
+            _('Tenant id of the policy target group.')
         ),
         NAME: properties.Schema(
             properties.Schema.STRING,
-            _('Name of the endpoint group.'),
+            _('Name of the policy target group.'),
             update_allowed=True
         ),
         DESCRIPTION: properties.Schema(
             properties.Schema.STRING,
-            _('Description of the endpoint group.'),
+            _('Description of the policy target group.'),
             update_allowed=True
         ),
         L2_POLICY_ID: properties.Schema(
             properties.Schema.STRING,
-            _('L2 policy id of the endpoint group.'),
+            _('L2 policy id of the policy target group.'),
             update_allowed=True
         ),
-        PROVIDED_CONTRACTS: properties.Schema(
+        PROVIDED_POLICY_RULE_SETS: properties.Schema(
             properties.Schema.LIST,
-            _('Provided contracts for the endpoint group.'),
+            _('Provided policy rule set for the policy target group.'),
             update_allowed=True
         ),
-        CONSUMED_CONTRACTS: properties.Schema(
+        CONSUMED_POLICY_RULE_SETS: properties.Schema(
             properties.Schema.LIST,
-            _('Consumed contracts for the endpoint group.'),
+            _('Consumed policy rule set for the policy target group.'),
             update_allowed=True
         ),
         NETWORK_SERVICE_POLICY_ID: properties.Schema(
             properties.Schema.STRING,
-            _('Network service policy id of the endpoint group.'),
+            _('Network service policy id of the policy target group.'),
             update_allowed=True, default=None
         )
     }
 
     def _show_resource(self):
         client = self.grouppolicy()
-        epg_id = self.resource_id
-        return client.show_endpoint_group(epg_id)['endpoint_group']
+        ptg_id = self.resource_id
+        return client.show_policy_target_group(ptg_id)['policy_target_group']
 
     def handle_create(self):
         client = self.grouppolicy()
@@ -166,38 +168,46 @@ class EndpointGroup(gbpresource.GBPResource):
             if self.properties.get(key) is not None:
                 props[key] = self.properties.get(key)
 
-        provided_contracts_list = {}
-        consumed_contracts_list = {}
-        props_provided_contracts = props.get('provided_contracts', [])
-        props_consumed_contracts = props.get('consumed_contracts', [])
+        provided_policy_rule_set_list = {}
+        consumed_policy_rule_set_list = {}
+        props_provided_policy_rule_sets = props.get(
+            'provided_policy_rule_sets', [])
+        props_consumed_policy_rule_sets = props.get(
+            'consumed_policy_rule_sets', [])
 
-        for prop_prov_contract in props_provided_contracts:
-            contract_id = prop_prov_contract['contract_id']
-            contract_scope = prop_prov_contract['contract_scope']
-            provided_contracts_list.update({contract_id: contract_scope})
+        for prop_prov_policy_rule_set in props_provided_policy_rule_sets:
+            policy_rule_set_id = (
+                prop_prov_policy_rule_set['policy_rule_set_id'])
+            policy_rule_set_scope = (
+                prop_prov_policy_rule_set['policy_rule_set_scope'])
+            provided_policy_rule_set_list.update({policy_rule_set_id:
+                                                  policy_rule_set_scope})
 
-        for prop_cons_contract in props_consumed_contracts:
-            contract_id = prop_cons_contract['contract_id']
-            contract_scope = prop_cons_contract['contract_scope']
-            consumed_contracts_list.update({contract_id: contract_scope})
+        for prop_cons_policy_rule_set in props_consumed_policy_rule_sets:
+            policy_rule_set_id = (
+                prop_cons_policy_rule_set['policy_rule_set_id'])
+            policy_rule_set_scope = (
+                prop_cons_policy_rule_set['policy_rule_set_scope'])
+            consumed_policy_rule_set_list.update({policy_rule_set_id:
+                                                  policy_rule_set_scope})
 
-        if provided_contracts_list:
-            props['provided_contracts'] = provided_contracts_list
-        if consumed_contracts_list:
-            props['consumed_contracts'] = consumed_contracts_list
+        if provided_policy_rule_set_list:
+            props['provided_policy_rule_sets'] = provided_policy_rule_set_list
+        if consumed_policy_rule_set_list:
+            props['consumed_policy_rule_sets'] = consumed_policy_rule_set_list
 
-        epg = client.create_endpoint_group(
-            {'endpoint_group': props})['endpoint_group']
+        ptg = client.create_policy_target_group(
+            {'policy_target_group': props})['policy_target_group']
 
-        self.resource_id_set(epg['id'])
+        self.resource_id_set(ptg['id'])
 
     def handle_delete(self):
 
         client = self.grouppolicy()
-        epg_id = self.resource_id
+        ptg_id = self.resource_id
 
         try:
-            client.delete_endpoint_group(epg_id)
+            client.delete_policy_target_group(ptg_id)
         except NeutronClientException as ex:
             self.client_plugin().ignore_not_found(ex)
         else:
@@ -205,8 +215,8 @@ class EndpointGroup(gbpresource.GBPResource):
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
         if prop_diff:
-            self.grouppolicy().update_endpoint_group(
-                self.resource_id, {'endpoint_group': prop_diff})
+            self.grouppolicy().update_policy_target_group(
+                self.resource_id, {'policy_target_group': prop_diff})
 
 
 class L2Policy(gbpresource.GBPResource):
@@ -590,39 +600,39 @@ class PolicyRule(gbpresource.GBPResource):
                 self.resource_id, {'policy_rule': prop_diff})
 
 
-class Contract(gbpresource.GBPResource):
+class PolicyRuleSet(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, PARENT_ID, CHILD_CONTRACTS,
+        TENANT_ID, NAME, DESCRIPTION, PARENT_ID, CHILD_POLICY_RULE_SETS,
         POLICY_RULES
     ) = (
-        'tenant_id', 'name', 'description', 'parent_id', 'child_contracts',
-        'policy_rules'
+        'tenant_id', 'name', 'description', 'parent_id',
+        'child_policy_rule_sets', 'policy_rules'
     )
 
     properties_schema = {
         TENANT_ID: properties.Schema(
             properties.Schema.STRING,
-            _('Tenant id of the contract.')
+            _('Tenant id of the policy rule set.')
         ),
         NAME: properties.Schema(
             properties.Schema.STRING,
-            _('Name of the contract.'),
+            _('Name of the policy rule set.'),
             update_allowed=True
         ),
         DESCRIPTION: properties.Schema(
             properties.Schema.STRING,
-            _('Description of the contract.'),
+            _('Description of the policy rule set.'),
             update_allowed=True
         ),
         PARENT_ID: properties.Schema(
             properties.Schema.STRING,
-            _('Parent id of the contract.'),
+            _('Parent id of the policy rule set.'),
             update_allowed=False
         ),
-        CHILD_CONTRACTS: properties.Schema(
+        CHILD_POLICY_RULE_SETS: properties.Schema(
             properties.Schema.LIST,
-            _('List of child contracts.'),
+            _('List of child policy rule sets.'),
             default=None, update_allowed=True
         ),
         POLICY_RULES: properties.Schema(
@@ -634,8 +644,8 @@ class Contract(gbpresource.GBPResource):
 
     def _show_resource(self):
         client = self.grouppolicy()
-        contract_id = self.resource_id
-        return client.show_contract(contract_id)['contract']
+        prs_id = self.resource_id
+        return client.show_policy_rule_set(prs_id)['policy_rule_set']
 
     def handle_create(self):
         client = self.grouppolicy()
@@ -645,18 +655,18 @@ class Contract(gbpresource.GBPResource):
             if self.properties.get(key) is not None:
                 props[key] = self.properties.get(key)
 
-        contract = client.create_contract(
-            {'contract': props})['contract']
+        policy_rule_set = client.create_policy_rule_set(
+            {'policy_rule_set': props})['policy_rule_set']
 
-        self.resource_id_set(contract['id'])
+        self.resource_id_set(policy_rule_set['id'])
 
     def handle_delete(self):
 
         client = self.grouppolicy()
-        contract_id = self.resource_id
+        policy_rule_set_id = self.resource_id
 
         try:
-            client.delete_contract(contract_id)
+            client.delete_policy_rule_set(policy_rule_set_id)
         except NeutronClientException as ex:
             self.client_plugin().ignore_not_found(ex)
         else:
@@ -664,8 +674,8 @@ class Contract(gbpresource.GBPResource):
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
         if prop_diff:
-            self.grouppolicy().update_contract(
-                self.resource_id, {'contract': prop_diff})
+            self.grouppolicy().update_policy_rule_set(
+                self.resource_id, {'policy_rule_set': prop_diff})
 
 
 class NetworkServicePolicy(gbpresource.GBPResource):
@@ -737,13 +747,13 @@ class NetworkServicePolicy(gbpresource.GBPResource):
 
 def resource_mapping():
     return {
-        'OS::Neutron::Endpoint': Endpoint,
-        'OS::Neutron::EndpointGroup': EndpointGroup,
+        'OS::Neutron::PolicyTarget': PolicyTarget,
+        'OS::Neutron::PolicyTargetGroup': PolicyTargetGroup,
         'OS::Neutron::L2Policy': L2Policy,
         'OS::Neutron::L3Policy': L3Policy,
         'OS::Neutron::PolicyClassifier': PolicyClassifier,
         'OS::Neutron::PolicyAction': PolicyAction,
         'OS::Neutron::PolicyRule': PolicyRule,
-        'OS::Neutron::Contract': Contract,
+        'OS::Neutron::PolicyRuleSet': PolicyRuleSet,
         'OS::Neutron::NetworkServicePolicy': NetworkServicePolicy
     }
