@@ -23,43 +23,47 @@ from heat.engine import scheduler
 from heat.tests import utils
 
 
-endpoint_template = '''
+policy_target_template = '''
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
-  "Description" : "Template to test neutron endpoint resource",
+  "Description" : "Template to test neutron policy target resource",
   "Parameters" : {},
   "Resources" : {
-    "endpoint": {
-      "Type": "OS::Neutron::Endpoint",
+    "policy_target": {
+      "Type": "OS::Neutron::PolicyTarget",
       "Properties": {
-        "name": "test-endpoint",
-        "endpoint_group_id": "epg-id",
-        "description": "test endpoint resource"
+        "name": "test-policy-target",
+        "policy_target_group_id": "epg-id",
+        "description": "test policy target resource"
       }
     }
   }
 }
 '''
 
-endpoint_group_template = '''
+policy_target_group_template = '''
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
-  "Description" : "Template to test neutron endpoint group resource",
+  "Description" : "Template to test neutron policy target group resource",
   "Parameters" : {},
   "Resources" : {
-    "endpoint_group": {
-      "Type": "OS::Neutron::EndpointGroup",
+    "policy_target_group": {
+      "Type": "OS::Neutron::PolicyTargetGroup",
       "Properties": {
-        "name": "test-endpoint-group",
-        "description": "test endpoint group resource",
+        "name": "test-policy-target-group",
+        "description": "test policy target group resource",
         "l2_policy_id": "l2-policy-id",
-        "provided_contracts": [
-            {"contract_id": "contract1", "contract_scope": "scope1"},
-            {"contract_id": "contract2", "contract_scope": "scope2"}
+        "provided_policy_rule_sets": [
+            {"policy_rule_set_id": "policy_rule_set1",
+             "policy_rule_set_scope": "scope1"},
+            {"policy_rule_set_id": "policy_rule_set2",
+             "policy_rule_set_scope": "scope2"}
         ],
-        "consumed_contracts": [
-            {"contract_id": "contract3", "contract_scope": "scope3"},
-            {"contract_id": "contract4", "contract_scope": "scope4"}
+        "consumed_policy_rule_sets": [
+            {"policy_rule_set_id": "policy_rule_set3",
+             "policy_rule_set_scope": "scope3"},
+            {"policy_rule_set_id": "policy_rule_set4",
+             "policy_rule_set_scope": "scope4"}
         ]
       }
     }
@@ -164,19 +168,19 @@ policy_rule_template = '''
 }
 '''
 
-contract_template = '''
+policy_rule_set_template = '''
 {
  "AWSTemplateFormatVersion" : "2010-09-09",
-  "Description" : "Template to test contract",
+  "Description" : "Template to test policy rule set",
   "Parameters" : {},
   "Resources" : {
-  "contract": {
-      "Type": "OS::Neutron::Contract",
+  "policy_rule_set": {
+      "Type": "OS::Neutron::PolicyRuleSet",
       "Properties": {
-          "name": "test-contract",
-          "description": "test contract resource",
+          "name": "test-policy-rule-set",
+          "description": "test policy rule set resource",
           "parent_id": "3456",
-          "child_contracts": ["7890", "1234"],
+          "child_policy_rule_sets": ["7890", "1234"],
           "policy_rules": ["2345", "6789"]
       }
     }
@@ -204,53 +208,53 @@ network_service_policy_template = '''
 '''
 
 
-class EndpointTest(HeatTestCase):
+class PolicyTargetTest(HeatTestCase):
 
     def setUp(self):
-        super(EndpointTest, self).setUp()
-        self.m.StubOutWithMock(gbpclient.Client, 'create_endpoint')
-        self.m.StubOutWithMock(gbpclient.Client, 'delete_endpoint')
-        self.m.StubOutWithMock(gbpclient.Client, 'show_endpoint')
-        self.m.StubOutWithMock(gbpclient.Client, 'update_endpoint')
+        super(PolicyTargetTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client, 'create_policy_target')
+        self.m.StubOutWithMock(gbpclient.Client, 'delete_policy_target')
+        self.m.StubOutWithMock(gbpclient.Client, 'show_policy_target')
+        self.m.StubOutWithMock(gbpclient.Client, 'update_policy_target')
         self.stub_keystoneclient()
 
-    def create_endpoint(self):
-        gbpclient.Client.create_endpoint({
-            'endpoint': {
-                'name': 'test-endpoint',
-                'endpoint_group_id': 'epg-id',
-                "description": "test endpoint resource"
+    def create_policy_target(self):
+        gbpclient.Client.create_policy_target({
+            'policy_target': {
+                'name': 'test-policy-target',
+                'policy_target_group_id': 'epg-id',
+                "description": "test policy target resource"
             }
-        }).AndReturn({'endpoint': {'id': '5678'}})
+        }).AndReturn({'policy_target': {'id': '5678'}})
 
-        snippet = template_format.parse(endpoint_template)
+        snippet = template_format.parse(policy_target_template)
         stack = utils.parse_stack(snippet)
         resource_defns = stack.t.resource_definitions(stack)
-        return grouppolicy.Endpoint(
-            'endpoint', resource_defns['endpoint'], stack)
+        return grouppolicy.PolicyTarget(
+            'policy_target', resource_defns['policy_target'], stack)
 
     def test_create(self):
-        rsrc = self.create_endpoint()
+        rsrc = self.create_policy_target()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
         self.m.VerifyAll()
 
     def test_create_failed(self):
-        gbpclient.Client.create_endpoint({
-            'endpoint': {
-                'name': 'test-endpoint',
-                'endpoint_group_id': 'epg-id',
-                "description": "test endpoint resource"
+        gbpclient.Client.create_policy_target({
+            'policy_target': {
+                'name': 'test-policy-target',
+                'policy_target_group_id': 'epg-id',
+                "description": "test policy target resource"
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
 
-        snippet = template_format.parse(endpoint_template)
+        snippet = template_format.parse(policy_target_template)
         stack = utils.parse_stack(snippet)
         resource_defns = stack.t.resource_definitions(stack)
-        rsrc = grouppolicy.Endpoint(
-            'endpoint', resource_defns['endpoint'], stack)
+        rsrc = grouppolicy.PolicyTarget(
+            'policy_target', resource_defns['policy_target'], stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -261,11 +265,11 @@ class EndpointTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_delete(self):
-        gbpclient.Client.delete_endpoint('5678')
-        gbpclient.Client.show_endpoint('5678').AndRaise(
+        gbpclient.Client.delete_policy_target('5678')
+        gbpclient.Client.show_policy_target('5678').AndRaise(
             grouppolicy.NeutronClientException(status_code=404))
 
-        rsrc = self.create_endpoint()
+        rsrc = self.create_policy_target()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         scheduler.TaskRunner(rsrc.delete)()
@@ -273,10 +277,10 @@ class EndpointTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_delete_already_gone(self):
-        gbpclient.Client.delete_endpoint('5678').AndRaise(
+        gbpclient.Client.delete_policy_target('5678').AndRaise(
             grouppolicy.NeutronClientException(status_code=404))
 
-        rsrc = self.create_endpoint()
+        rsrc = self.create_policy_target()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         scheduler.TaskRunner(rsrc.delete)()
@@ -284,10 +288,10 @@ class EndpointTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_delete_failed(self):
-        gbpclient.Client.delete_endpoint('5678').AndRaise(
+        gbpclient.Client.delete_policy_target('5678').AndRaise(
             grouppolicy.NeutronClientException(status_code=400))
 
-        rsrc = self.create_endpoint()
+        rsrc = self.create_policy_target()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         error = self.assertRaises(exception.ResourceFailure,
@@ -299,103 +303,107 @@ class EndpointTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_attribute(self):
-        rsrc = self.create_endpoint()
-        gbpclient.Client.show_endpoint('5678').MultipleTimes(
+        rsrc = self.create_policy_target()
+        gbpclient.Client.show_policy_target('5678').MultipleTimes(
         ).AndReturn(
-            {'endpoint': {'port_id': '1234'}})
+            {'policy_target': {'port_id': '1234'}})
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         self.assertEqual('1234', rsrc.FnGetAtt('port_id'))
         self.m.VerifyAll()
 
     def test_attribute_failed(self):
-        rsrc = self.create_endpoint()
+        rsrc = self.create_policy_target()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         error = self.assertRaises(exception.InvalidTemplateAttribute,
                                   rsrc.FnGetAtt, 'l2_policy_id')
         self.assertEqual(
-            'The Referenced Attribute (endpoint l2_policy_id) is '
+            'The Referenced Attribute (policy_target l2_policy_id) is '
             'incorrect.', str(error))
         self.m.VerifyAll()
 
     def test_update(self):
-        rsrc = self.create_endpoint()
-        gbpclient.Client.update_endpoint(
-            '5678', {'endpoint': {'endpoint_group_id': 'epg_id_update'}})
+        rsrc = self.create_policy_target()
+        gbpclient.Client.update_policy_target(
+            '5678', {'policy_target': {'policy_target_group_id':
+                                       'epg_id_update'}})
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['endpoint_group_id'] = 'epg_id_update'
+        update_template['Properties']['policy_target_group_id'] = (
+            'epg_id_update')
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
 
 
-class EndpointGroupTest(HeatTestCase):
+class PolicyTargetGroupTest(HeatTestCase):
 
     def setUp(self):
-        super(EndpointGroupTest, self).setUp()
-        self.m.StubOutWithMock(gbpclient.Client, 'create_endpoint_group')
-        self.m.StubOutWithMock(gbpclient.Client, 'delete_endpoint_group')
-        self.m.StubOutWithMock(gbpclient.Client, 'show_endpoint_group')
-        self.m.StubOutWithMock(gbpclient.Client, 'update_endpoint_group')
+        super(PolicyTargetGroupTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client, 'create_policy_target_group')
+        self.m.StubOutWithMock(gbpclient.Client, 'delete_policy_target_group')
+        self.m.StubOutWithMock(gbpclient.Client, 'show_policy_target_group')
+        self.m.StubOutWithMock(gbpclient.Client, 'update_policy_target_group')
         self.stub_keystoneclient()
 
-    def create_endpoint_group(self):
-        gbpclient.Client.create_endpoint_group({
-            "endpoint_group": {
-                "name": "test-endpoint-group",
-                "description": "test endpoint group resource",
+    def create_policy_target_group(self):
+        gbpclient.Client.create_policy_target_group({
+            "policy_target_group": {
+                "name": "test-policy-target-group",
+                "description": "test policy target group resource",
                 "l2_policy_id": "l2-policy-id",
-                "provided_contracts": {
-                    "contract1": "scope1",
-                    "contract2": "scope2"
+                "provided_policy_rule_sets": {
+                    "policy_rule_set1": "scope1",
+                    "policy_rule_set2": "scope2"
                 },
-                "consumed_contracts": {
-                    "contract3": "scope3",
-                    "contract4": "scope4"
+                "consumed_policy_rule_sets": {
+                    "policy_rule_set3": "scope3",
+                    "policy_rule_set4": "scope4"
                 }
             }
-        }).AndReturn({'endpoint_group': {'id': '5678'}})
+        }).AndReturn({'policy_target_group': {'id': '5678'}})
 
-        snippet = template_format.parse(endpoint_group_template)
+        snippet = template_format.parse(policy_target_group_template)
         stack = utils.parse_stack(snippet)
         resource_defns = stack.t.resource_definitions(stack)
-        return grouppolicy.EndpointGroup(
-            'endpoint_group', resource_defns['endpoint_group'], stack)
+        return grouppolicy.PolicyTargetGroup(
+            'policy_target_group', resource_defns['policy_target_group'],
+            stack)
 
     def test_create(self):
-        rsrc = self.create_endpoint_group()
+        rsrc = self.create_policy_target_group()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
         self.m.VerifyAll()
 
     def test_create_failed(self):
-        gbpclient.Client.create_endpoint_group({
-            "endpoint_group": {
-                "name": "test-endpoint-group",
-                "description": "test endpoint group resource",
+        gbpclient.Client.create_policy_target_group({
+            "policy_target_group": {
+                "name": "test-policy-target-group",
+                "description": "test policy target group resource",
                 "l2_policy_id": "l2-policy-id",
-                "provided_contracts": {
-                    "contract1": "scope1",
-                    "contract2": "scope2"
+                "provided_policy_rule_sets": {
+                    "policy_rule_set1": "scope1",
+                    "policy_rule_set2": "scope2"
                 },
-                "consumed_contracts": {
-                    "contract3": "scope3",
-                    "contract4": "scope4"
+                "consumed_policy_rule_sets": {
+                    "policy_rule_set3": "scope3",
+                    "policy_rule_set4": "scope4"
                 }
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
 
-        snippet = template_format.parse(endpoint_group_template)
+        snippet = template_format.parse(policy_target_group_template)
         stack = utils.parse_stack(snippet)
         resource_defns = stack.t.resource_definitions(stack)
-        rsrc = grouppolicy.EndpointGroup(
-            'endpoint_group', resource_defns['endpoint_group'], stack)
+        rsrc = grouppolicy.PolicyTargetGroup(
+            'policy_target_group', resource_defns['policy_target_group'],
+            stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -406,11 +414,11 @@ class EndpointGroupTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_delete(self):
-        gbpclient.Client.delete_endpoint_group('5678')
-        gbpclient.Client.show_endpoint_group('5678').AndRaise(
+        gbpclient.Client.delete_policy_target_group('5678')
+        gbpclient.Client.show_policy_target_group('5678').AndRaise(
             grouppolicy.NeutronClientException(status_code=404))
 
-        rsrc = self.create_endpoint_group()
+        rsrc = self.create_policy_target_group()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         scheduler.TaskRunner(rsrc.delete)()
@@ -418,10 +426,10 @@ class EndpointGroupTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_delete_already_gone(self):
-        gbpclient.Client.delete_endpoint_group('5678').AndRaise(
+        gbpclient.Client.delete_policy_target_group('5678').AndRaise(
             grouppolicy.NeutronClientException(status_code=404))
 
-        rsrc = self.create_endpoint_group()
+        rsrc = self.create_policy_target_group()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         scheduler.TaskRunner(rsrc.delete)()
@@ -429,10 +437,10 @@ class EndpointGroupTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_delete_failed(self):
-        gbpclient.Client.delete_endpoint_group('5678').AndRaise(
+        gbpclient.Client.delete_policy_target_group('5678').AndRaise(
             grouppolicy.NeutronClientException(status_code=400))
 
-        rsrc = self.create_endpoint_group()
+        rsrc = self.create_policy_target_group()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         error = self.assertRaises(exception.ResourceFailure,
@@ -444,9 +452,9 @@ class EndpointGroupTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_update(self):
-        rsrc = self.create_endpoint_group()
-        gbpclient.Client.update_endpoint_group(
-            '5678', {'endpoint_group': {'l2_policy_id': 'l2_id_update'}})
+        rsrc = self.create_policy_target_group()
+        gbpclient.Client.update_policy_target_group(
+            '5678', {'policy_target_group': {'l2_policy_id': 'l2_id_update'}})
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
 
@@ -1015,57 +1023,57 @@ class PolicyRuleTest(HeatTestCase):
         self.m.VerifyAll()
 
 
-class ContractTest(HeatTestCase):
+class PolicyRuleSetTest(HeatTestCase):
 
     def setUp(self):
-        super(ContractTest, self).setUp()
-        self.m.StubOutWithMock(gbpclient.Client, 'create_contract')
-        self.m.StubOutWithMock(gbpclient.Client, 'delete_contract')
-        self.m.StubOutWithMock(gbpclient.Client, 'show_contract')
-        self.m.StubOutWithMock(gbpclient.Client, 'update_contract')
+        super(PolicyRuleSetTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client, 'create_policy_rule_set')
+        self.m.StubOutWithMock(gbpclient.Client, 'delete_policy_rule_set')
+        self.m.StubOutWithMock(gbpclient.Client, 'show_policy_rule_set')
+        self.m.StubOutWithMock(gbpclient.Client, 'update_policy_rule_set')
         self.stub_keystoneclient()
 
-    def create_contract(self):
-        gbpclient.Client.create_contract({
-            'contract': {
-                "name": "test-contract",
-                "description": "test contract resource",
+    def create_policy_rule_set(self):
+        gbpclient.Client.create_policy_rule_set({
+            'policy_rule_set': {
+                "name": "test-policy-rule-set",
+                "description": "test policy rule set resource",
                 "parent_id": "3456",
-                "child_contracts": ["7890", "1234"],
+                "child_policy_rule_sets": ["7890", "1234"],
                 "policy_rules": ["2345", "6789"]
             }
-        }).AndReturn({'contract': {'id': '5678'}})
+        }).AndReturn({'policy_rule_set': {'id': '5678'}})
 
-        snippet = template_format.parse(contract_template)
+        snippet = template_format.parse(policy_rule_set_template)
         stack = utils.parse_stack(snippet)
         resource_defns = stack.t.resource_definitions(stack)
-        return grouppolicy.Contract(
-            'contract', resource_defns['contract'], stack)
+        return grouppolicy.PolicyRuleSet(
+            'policy_rule_set', resource_defns['policy_rule_set'], stack)
 
     def test_create(self):
-        rsrc = self.create_contract()
+        rsrc = self.create_policy_rule_set()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
         self.m.VerifyAll()
 
     def test_create_failed(self):
-        gbpclient.Client.create_contract({
-            'contract': {
-                "name": "test-contract",
-                "description": "test contract resource",
+        gbpclient.Client.create_policy_rule_set({
+            'policy_rule_set': {
+                "name": "test-policy-rule-set",
+                "description": "test policy rule set resource",
                 "parent_id": "3456",
-                "child_contracts": ["7890", "1234"],
+                "child_policy_rule_sets": ["7890", "1234"],
                 "policy_rules": ["2345", "6789"]
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
 
-        snippet = template_format.parse(contract_template)
+        snippet = template_format.parse(policy_rule_set_template)
         stack = utils.parse_stack(snippet)
         resource_defns = stack.t.resource_definitions(stack)
-        rsrc = grouppolicy.Contract(
-            'contract', resource_defns['contract'], stack)
+        rsrc = grouppolicy.PolicyRuleSet(
+            'policy_rule_set', resource_defns['policy_rule_set'], stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -1076,11 +1084,11 @@ class ContractTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_delete(self):
-        gbpclient.Client.delete_contract('5678')
-        gbpclient.Client.show_contract('5678').AndRaise(
+        gbpclient.Client.delete_policy_rule_set('5678')
+        gbpclient.Client.show_policy_rule_set('5678').AndRaise(
             grouppolicy.NeutronClientException(status_code=404))
 
-        rsrc = self.create_contract()
+        rsrc = self.create_policy_rule_set()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         scheduler.TaskRunner(rsrc.delete)()
@@ -1088,10 +1096,10 @@ class ContractTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_delete_already_gone(self):
-        gbpclient.Client.delete_contract('5678').AndRaise(
+        gbpclient.Client.delete_policy_rule_set('5678').AndRaise(
             grouppolicy.NeutronClientException(status_code=404))
 
-        rsrc = self.create_contract()
+        rsrc = self.create_policy_rule_set()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         scheduler.TaskRunner(rsrc.delete)()
@@ -1099,10 +1107,10 @@ class ContractTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_delete_failed(self):
-        gbpclient.Client.delete_contract('5678').AndRaise(
+        gbpclient.Client.delete_policy_rule_set('5678').AndRaise(
             grouppolicy.NeutronClientException(status_code=400))
 
-        rsrc = self.create_contract()
+        rsrc = self.create_policy_rule_set()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         error = self.assertRaises(exception.ResourceFailure,
@@ -1114,14 +1122,14 @@ class ContractTest(HeatTestCase):
         self.m.VerifyAll()
 
     def test_update(self):
-        rsrc = self.create_contract()
-        gbpclient.Client.update_contract(
-            '5678', {'contract': {'child_contracts': ["1234"]}})
+        rsrc = self.create_policy_rule_set()
+        gbpclient.Client.update_policy_rule_set(
+            '5678', {'policy_rule_set': {'child_policy_rule_sets': ["1234"]}})
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['child_contracts'] = ["1234"]
+        update_template['Properties']['child_policy_rule_sets'] = ["1234"]
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
