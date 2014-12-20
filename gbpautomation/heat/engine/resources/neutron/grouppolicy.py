@@ -111,11 +111,11 @@ class PolicyTargetGroup(gbpresource.GBPResource):
 
     PROPERTIES = (
         TENANT_ID, NAME, DESCRIPTION, L2_POLICY_ID, PROVIDED_POLICY_RULE_SETS,
-        CONSUMED_POLICY_RULE_SETS, NETWORK_SERVICE_POLICY_ID
+        CONSUMED_POLICY_RULE_SETS, NETWORK_SERVICE_POLICY_ID, SHARED
     ) = (
         'tenant_id', 'name', 'description', 'l2_policy_id',
         'provided_policy_rule_sets', 'consumed_policy_rule_sets',
-        'network_service_policy_id'
+        'network_service_policy_id', 'shared'
     )
 
     properties_schema = {
@@ -152,7 +152,13 @@ class PolicyTargetGroup(gbpresource.GBPResource):
             properties.Schema.STRING,
             _('Network service policy id of the policy target group.'),
             update_allowed=True, default=None
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
+
     }
 
     def _show_resource(self):
@@ -222,9 +228,9 @@ class PolicyTargetGroup(gbpresource.GBPResource):
 class L2Policy(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, L3_POLICY_ID
+        TENANT_ID, NAME, DESCRIPTION, L3_POLICY_ID, SHARED
     ) = (
-        'tenant_id', 'name', 'description', 'l3_policy_id'
+        'tenant_id', 'name', 'description', 'l3_policy_id', 'shared'
     )
 
     properties_schema = {
@@ -247,6 +253,11 @@ class L2Policy(gbpresource.GBPResource):
             _('L3 policy id associated with l2 policy.'),
             required=True,
             update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
     }
 
@@ -290,10 +301,10 @@ class L3Policy(gbpresource.GBPResource):
 
     PROPERTIES = (
         TENANT_ID, NAME, DESCRIPTION, IP_VERSION, IP_POOL,
-        SUBNET_PREFIX_LENGTH
+        SUBNET_PREFIX_LENGTH, EXTERNAL_SEGMENTS, SHARED
     ) = (
         'tenant_id', 'name', 'description', 'ip_version', 'ip_pool',
-        'subnet_prefix_length'
+        'subnet_prefix_length', 'external_segments', 'shared'
     )
 
     properties_schema = {
@@ -325,6 +336,16 @@ class L3Policy(gbpresource.GBPResource):
             properties.Schema.INTEGER,
             _('Subnet prefix length of L3 policy.'),
             update_allowed=True
+        ),
+        EXTERNAL_SEGMENTS: properties.Schema(
+            properties.Schema.MAP,
+            _('External segments of L3 policy.'),
+            update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
     }
 
@@ -368,10 +389,10 @@ class PolicyClassifier(gbpresource.GBPResource):
 
     PROPERTIES = (
         TENANT_ID, NAME, DESCRIPTION, PROTOCOL, PORT_RANGE,
-        DIRECTION
+        DIRECTION, SHARED
     ) = (
         'tenant_id', 'name', 'description', 'protocol', 'port_range',
-        'direction'
+        'direction', 'shared'
     )
 
     properties_schema = {
@@ -409,6 +430,11 @@ class PolicyClassifier(gbpresource.GBPResource):
                 constraints.AllowedValues(['in', 'out', 'bi', None])
             ],
             update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
     }
 
@@ -451,9 +477,10 @@ class PolicyClassifier(gbpresource.GBPResource):
 class PolicyAction(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, ACTION_TYPE, ACTION_VALUE
+        TENANT_ID, NAME, DESCRIPTION, ACTION_TYPE, ACTION_VALUE, SHARED
     ) = (
-        'tenant_id', 'name', 'description', 'action_type', 'action_value'
+        'tenant_id', 'name', 'description', 'action_type', 'action_value',
+        'shared'
     )
 
     properties_schema = {
@@ -483,6 +510,11 @@ class PolicyAction(gbpresource.GBPResource):
             properties.Schema.STRING,
             _('Value of the action.'),
             update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
     }
 
@@ -526,10 +558,10 @@ class PolicyRule(gbpresource.GBPResource):
 
     PROPERTIES = (
         TENANT_ID, NAME, DESCRIPTION, ENABLED, POLICY_CLASSIFIER_ID,
-        POLICY_ACTIONS
+        POLICY_ACTIONS, SHARED
     ) = (
         'tenant_id', 'name', 'description', 'enabled', 'policy_classifier_id',
-        'policy_actions'
+        'policy_actions', 'shared'
     )
 
     properties_schema = {
@@ -561,6 +593,11 @@ class PolicyRule(gbpresource.GBPResource):
             properties.Schema.LIST,
             _('List of actions of the policy rule.'),
             default=None, update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
     }
 
@@ -604,10 +641,10 @@ class PolicyRuleSet(gbpresource.GBPResource):
 
     PROPERTIES = (
         TENANT_ID, NAME, DESCRIPTION, PARENT_ID, CHILD_POLICY_RULE_SETS,
-        POLICY_RULES
+        POLICY_RULES, SHARED
     ) = (
         'tenant_id', 'name', 'description', 'parent_id',
-        'child_policy_rule_sets', 'policy_rules'
+        'child_policy_rule_sets', 'policy_rules', 'shared'
     )
 
     properties_schema = {
@@ -639,6 +676,11 @@ class PolicyRuleSet(gbpresource.GBPResource):
             properties.Schema.LIST,
             _('List of policy rules.'),
             default=None, update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
     }
 
@@ -681,9 +723,9 @@ class PolicyRuleSet(gbpresource.GBPResource):
 class NetworkServicePolicy(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, NETWORK_SERVICE_PARAMS
+        TENANT_ID, NAME, DESCRIPTION, NETWORK_SERVICE_PARAMS, SHARED
     ) = (
-        'tenant_id', 'name', 'description', 'network_service_params'
+        'tenant_id', 'name', 'description', 'network_service_params', 'shared'
     )
 
     properties_schema = {
@@ -705,6 +747,11 @@ class NetworkServicePolicy(gbpresource.GBPResource):
             properties.Schema.LIST,
             _('List of network service policy dicts.'),
             default=None, update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
     }
 
@@ -745,6 +792,291 @@ class NetworkServicePolicy(gbpresource.GBPResource):
                 self.resource_id, {'network_service_policy': prop_diff})
 
 
+class ExternalPolicy(gbpresource.GBPResource):
+
+    PROPERTIES = (
+        TENANT_ID, NAME, DESCRIPTION, EXTERNAL_SEGMENTS,
+        PROVIDED_POLICY_RULE_SETS, CONSUMED_POLICY_RULE_SETS, SHARED
+    ) = (
+        'tenant_id', 'name', 'description', 'external_segments',
+        'provided_policy_rule_sets', 'consumed_policy_rule_sets', 'shared'
+    )
+
+    properties_schema = {
+        TENANT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Tenant id of the external policy.')
+        ),
+        NAME: properties.Schema(
+            properties.Schema.STRING,
+            _('Name of the external policy.'),
+            update_allowed=True
+        ),
+        DESCRIPTION: properties.Schema(
+            properties.Schema.STRING,
+            _('Description of the external policy.'),
+            update_allowed=True
+        ),
+        EXTERNAL_SEGMENTS: properties.Schema(
+            properties.Schema.LIST,
+            _('External segments of the policy.'),
+            update_allowed=True
+        ),
+        PROVIDED_POLICY_RULE_SETS: properties.Schema(
+            properties.Schema.LIST,
+            _('Provided policy rule sets.'),
+            default=None, update_allowed=True
+        ),
+        CONSUMED_POLICY_RULE_SETS: properties.Schema(
+            properties.Schema.LIST,
+            _('Consumed policy rule sets.'),
+            default=None, update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
+        )
+    }
+
+    def _show_resource(self):
+        client = self.grouppolicy()
+        ext_policy_id = self.resource_id
+        ext_policy = client.show_external_policy(ext_policy_id)
+        return ext_policy['external_policy']
+
+    def handle_create(self):
+        client = self.grouppolicy()
+
+        props = {}
+        for key in self.properties:
+            if self.properties.get(key) is not None:
+                props[key] = self.properties.get(key)
+
+        provided_policy_rule_set_list = {}
+        consumed_policy_rule_set_list = {}
+        props_provided_policy_rule_sets = props.get(
+            'provided_policy_rule_sets', [])
+        props_consumed_policy_rule_sets = props.get(
+            'consumed_policy_rule_sets', [])
+
+        for prop_prov_policy_rule_set in props_provided_policy_rule_sets:
+            policy_rule_set_id = (
+                prop_prov_policy_rule_set['policy_rule_set_id'])
+            policy_rule_set_scope = (
+                prop_prov_policy_rule_set['policy_rule_set_scope'])
+            provided_policy_rule_set_list.update({policy_rule_set_id:
+                                                  policy_rule_set_scope})
+
+        for prop_cons_policy_rule_set in props_consumed_policy_rule_sets:
+            policy_rule_set_id = (
+                prop_cons_policy_rule_set['policy_rule_set_id'])
+            policy_rule_set_scope = (
+                prop_cons_policy_rule_set['policy_rule_set_scope'])
+            consumed_policy_rule_set_list.update({policy_rule_set_id:
+                                                  policy_rule_set_scope})
+
+        if provided_policy_rule_set_list:
+            props['provided_policy_rule_sets'] = provided_policy_rule_set_list
+        if consumed_policy_rule_set_list:
+            props['consumed_policy_rule_sets'] = consumed_policy_rule_set_list
+
+        ext_policy = client.create_external_policy(
+            {'external_policy': props})['external_policy']
+
+        self.resource_id_set(ext_policy['id'])
+
+    def handle_delete(self):
+
+        client = self.grouppolicy()
+        ext_policy_id = self.resource_id
+
+        try:
+            client.delete_external_policy(ext_policy_id)
+        except NeutronClientException as ex:
+            self.client_plugin().ignore_not_found(ex)
+        else:
+            return self._delete_task()
+
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        if prop_diff:
+            self.grouppolicy().update_external_policy(
+                self.resource_id, {'external_policy': prop_diff})
+
+
+class ExternalSegment(gbpresource.GBPResource):
+
+    PROPERTIES = (
+        TENANT_ID, NAME, DESCRIPTION, IP_VERSION, CIDR,
+        EXTERNAL_ROUTES, PORT_ADDRESS_TRANSLATION, SHARED
+    ) = (
+        'tenant_id', 'name', 'description', 'ip_version', 'cidr',
+        'external_routes', 'port_address_translation', 'shared'
+    )
+
+    properties_schema = {
+        TENANT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Tenant id of the external segment.')
+        ),
+        NAME: properties.Schema(
+            properties.Schema.STRING,
+            _('Name of the external segment.'),
+            update_allowed=True
+        ),
+        DESCRIPTION: properties.Schema(
+            properties.Schema.STRING,
+            _('Description of the external segment.'),
+            update_allowed=True
+        ),
+        IP_VERSION: properties.Schema(
+            properties.Schema.STRING,
+            _('IP version of the external segment.'),
+            default='4', update_allowed=False
+        ),
+        CIDR: properties.Schema(
+            properties.Schema.STRING,
+            _('CIDR of the external segment.'),
+            default=None, update_allowed=False
+        ),
+        EXTERNAL_ROUTES: properties.Schema(
+            properties.Schema.LIST,
+            _('External routes of the external segment.'),
+            default=None, update_allowed=True
+        ),
+        PORT_ADDRESS_TRANSLATION: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Port address translation required for the external segment.'),
+            update_allowed=True, required=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
+        )
+    }
+
+    def _show_resource(self):
+        client = self.grouppolicy()
+        es_id = self.resource_id
+        es = client.show_external_segment(es_id)
+        return es['external_segment']
+
+    def handle_create(self):
+        client = self.grouppolicy()
+
+        props = {}
+        for key in self.properties:
+            if self.properties.get(key) is not None:
+                props[key] = self.properties.get(key)
+
+        es = client.create_external_segment(
+            {'external_segment': props})['external_segment']
+
+        self.resource_id_set(es['id'])
+
+    def handle_delete(self):
+
+        client = self.grouppolicy()
+        es_id = self.resource_id
+
+        try:
+            client.delete_external_segment(es_id)
+        except NeutronClientException as ex:
+            self.client_plugin().ignore_not_found(ex)
+        else:
+            return self._delete_task()
+
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        if prop_diff:
+            self.grouppolicy().update_external_segment(
+                self.resource_id, {'external_segment': prop_diff})
+
+
+class NATPool(gbpresource.GBPResource):
+
+    PROPERTIES = (
+        TENANT_ID, NAME, DESCRIPTION, IP_VERSION, IP_POOL,
+        EXTERNAL_SEGMENT_ID, SHARED
+    ) = (
+        'tenant_id', 'name', 'description', 'ip_version', 'ip_pool',
+        'external_segment_id', 'shared'
+    )
+
+    properties_schema = {
+        TENANT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Tenant id of the NAT pool.')
+        ),
+        NAME: properties.Schema(
+            properties.Schema.STRING,
+            _('Name of the NAT pool.'),
+            update_allowed=True
+        ),
+        DESCRIPTION: properties.Schema(
+            properties.Schema.STRING,
+            _('Description of the NET pool.'),
+            update_allowed=True
+        ),
+        IP_VERSION: properties.Schema(
+            properties.Schema.STRING,
+            _('IP version of the NAT pool.'),
+            default='4', update_allowed=False
+        ),
+        IP_POOL: properties.Schema(
+            properties.Schema.STRING,
+            _('IP pool of the NAT pool.'),
+            default=None, update_allowed=False
+        ),
+        EXTERNAL_SEGMENT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('External segment id of the NAT pool.'),
+            update_allowed=True, required=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
+        )
+    }
+
+    def _show_resource(self):
+        client = self.grouppolicy()
+        nat_pool_id = self.resource_id
+        nat_pool = client.show_nat_pool(nat_pool_id)
+        return nat_pool['nat_pool']
+
+    def handle_create(self):
+        client = self.grouppolicy()
+
+        props = {}
+        for key in self.properties:
+            if self.properties.get(key) is not None:
+                props[key] = self.properties.get(key)
+
+        nat_pool = client.create_nat_pool(
+            {'nat_pool': props})['nat_pool']
+
+        self.resource_id_set(nat_pool['id'])
+
+    def handle_delete(self):
+
+        client = self.grouppolicy()
+        nat_pool_id = self.resource_id
+
+        try:
+            client.delete_nat_pool(nat_pool_id)
+        except NeutronClientException as ex:
+            self.client_plugin().ignore_not_found(ex)
+        else:
+            return self._delete_task()
+
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        if prop_diff:
+            self.grouppolicy().update_nat_pool(
+                self.resource_id, {'nat_pool': prop_diff})
+
+
 def resource_mapping():
     return {
         'OS::Neutron::PolicyTarget': PolicyTarget,
@@ -755,5 +1087,8 @@ def resource_mapping():
         'OS::Neutron::PolicyAction': PolicyAction,
         'OS::Neutron::PolicyRule': PolicyRule,
         'OS::Neutron::PolicyRuleSet': PolicyRuleSet,
-        'OS::Neutron::NetworkServicePolicy': NetworkServicePolicy
+        'OS::Neutron::NetworkServicePolicy': NetworkServicePolicy,
+        'OS::Neutron::ExternalPolicy': ExternalPolicy,
+        'OS::Neutron::ExternalSegment': ExternalSegment,
+        'OS::Neutron::NATPool': NATPool
     }

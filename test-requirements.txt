@@ -10,6 +10,7 @@ coverage>=3.6
 discover
 lockfile>=0.8
 mock>=1.0
+python-neutronclient==2.3.9
 python-subunit>=0.0.18
 mox>=0.5.3
 MySQL-python
