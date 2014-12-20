@@ -64,7 +64,8 @@ policy_target_group_template = '''
              "policy_rule_set_scope": "scope3"},
             {"policy_rule_set_id": "policy_rule_set4",
              "policy_rule_set_scope": "scope4"}
-        ]
+        ],
+        "shared": True
       }
     }
   }
@@ -82,7 +83,8 @@ l2_policy_template = '''
       "Properties": {
         "name": "test-l2-policy",
         "description": "test L2 policy resource",
-        "l3_policy_id": "l3-policy-id"
+        "l3_policy_id": "l3-policy-id",
+        "shared": True
       }
     }
   }
@@ -102,7 +104,8 @@ l3_policy_template = '''
         "description": "test L3 policy resource",
         "ip_version": "4",
         "ip_pool": "10.20.20.0",
-        "subnet_prefix_length": 24
+        "subnet_prefix_length": 24,
+        "shared": True
       }
     }
   }
@@ -122,7 +125,8 @@ policy_classifier_template = '''
                 "description": "test policy classifier resource",
                 "protocol": "tcp",
                 "port_range": "8000-9000",
-                "direction": "bi"
+                "direction": "bi",
+                "shared": True
       }
     }
   }
@@ -141,7 +145,8 @@ policy_action_template = '''
                 "name": "test-policy-action",
                 "description": "test policy action resource",
                 "action_type": "redirect",
-                "action_value": "7890"
+                "action_value": "7890",
+                "shared": True
       }
     }
   }
@@ -161,7 +166,8 @@ policy_rule_template = '''
           "description": "test policy rule resource",
           "enabled": True,
           "policy_classifier_id": "7890",
-          "policy_actions": ['3456', '1234']
+          "policy_actions": ['3456', '1234'],
+          "shared": True
       }
     }
   }
@@ -181,7 +187,8 @@ policy_rule_set_template = '''
           "description": "test policy rule set resource",
           "parent_id": "3456",
           "child_policy_rule_sets": ["7890", "1234"],
-          "policy_rules": ["2345", "6789"]
+          "policy_rules": ["2345", "6789"],
+          "shared": True
       }
     }
   }
@@ -200,7 +207,90 @@ network_service_policy_template = '''
           "name": "test-nsp",
           "description": "test NSP resource",
           "network_service_params": [{'type': 'ip_single', 'name': 'vip',
-                                      'value': 'self_subnet'}]
+                                      'value': 'self_subnet'}],
+          "shared": True
+      }
+    }
+  }
+}
+'''
+
+external_policy_template = '''
+{
+ "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test external policy",
+  "Parameters" : {},
+  "Resources" : {
+  "external_policy": {
+      "Type": "OS::Neutron::ExternalPolicy",
+      "Properties": {
+          "name": "test-ep",
+          "description": "test EP resource",
+          "external_segments": ['1234'],
+          "provided_policy_rule_sets": [{
+              "policy_rule_set_id": '2345',
+              "policy_rule_set_scope": "scope1"
+          },
+          {
+              "policy_rule_set_id": '8901',
+              "policy_rule_set_scope": "scope2"
+          }],
+          "consumed_policy_rule_sets": [{
+              "policy_rule_set_id": '9012',
+              "policy_rule_set_scope": "scope3"
+          },
+          {
+              "policy_rule_set_id": '9210',
+              "policy_rule_set_scope": "scope4"
+          }],
+          "shared": True
+      }
+    }
+  }
+}
+'''
+
+external_segment_template = '''
+{
+ "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test external segment",
+  "Parameters" : {},
+  "Resources" : {
+  "external_segment": {
+      "Type": "OS::Neutron::ExternalSegment",
+      "Properties": {
+          "name": "test-es",
+          "description": "test ES resource",
+          "ip_version": '6',
+          "cidr": "192.168.0.0/24",
+          "external_routes": [{
+              "destination": "0.0.0.0/0",
+              "nexthop": "null"
+              }
+          ],
+          "port_address_translation": True,
+          "shared": True
+      }
+    }
+  }
+}
+'''
+
+nat_pool_template = '''
+{
+ "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test NAT pool",
+  "Parameters" : {},
+  "Resources" : {
+  "nat_pool": {
+      "Type": "OS::Neutron::NATPool",
+      "Properties": {
+          "name": "test-nat-pool",
+          "description": "test NP resource",
+          "ip_version": '6',
+          "ip_pool": "192.168.0.0/24",
+          "external_segment_id": '1234',
+          "shared": True
       }
     }
   }
@@ -362,7 +452,8 @@ class PolicyTargetGroupTest(HeatTestCase):
                 "consumed_policy_rule_sets": {
                     "policy_rule_set3": "scope3",
                     "policy_rule_set4": "scope4"
-                }
+                },
+                "shared": True
             }
         }).AndReturn({'policy_target_group': {'id': '5678'}})
 
@@ -393,7 +484,8 @@ class PolicyTargetGroupTest(HeatTestCase):
                 "consumed_policy_rule_sets": {
                     "policy_rule_set3": "scope3",
                     "policy_rule_set4": "scope4"
-                }
+                },
+                "shared": True
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -480,7 +572,8 @@ class L2PolicyTest(HeatTestCase):
             'l2_policy': {
                 "name": "test-l2-policy",
                 "description": "test L2 policy resource",
-                "l3_policy_id": "l3-policy-id"
+                "l3_policy_id": "l3-policy-id",
+                "shared": True
             }
         }).AndReturn({'l2_policy': {'id': '5678'}})
 
@@ -502,7 +595,8 @@ class L2PolicyTest(HeatTestCase):
             'l2_policy': {
                 "name": "test-l2-policy",
                 "description": "test L2 policy resource",
-                "l3_policy_id": "l3-policy-id"
+                "l3_policy_id": "l3-policy-id",
+                "shared": True
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -590,7 +684,8 @@ class L3PolicyTest(HeatTestCase):
                 "description": "test L3 policy resource",
                 "ip_version": "4",
                 "ip_pool": "10.20.20.0",
-                "subnet_prefix_length": 24
+                "subnet_prefix_length": 24,
+                "shared": True
             }
         }).AndReturn({'l3_policy': {'id': '5678'}})
 
@@ -614,7 +709,8 @@ class L3PolicyTest(HeatTestCase):
                 "description": "test L3 policy resource",
                 "ip_version": "4",
                 "ip_pool": "10.20.20.0",
-                "subnet_prefix_length": 24
+                "subnet_prefix_length": 24,
+                "shared": True
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -706,7 +802,8 @@ class PolicyClassifierTest(HeatTestCase):
                 "description": "test policy classifier resource",
                 "protocol": "tcp",
                 "port_range": "8000-9000",
-                "direction": "bi"
+                "direction": "bi",
+                "shared": True
             }
         }).AndReturn({'policy_classifier': {'id': '5678'}})
 
@@ -730,7 +827,8 @@ class PolicyClassifierTest(HeatTestCase):
                 "description": "test policy classifier resource",
                 "protocol": "tcp",
                 "port_range": "8000-9000",
-                "direction": "bi"
+                "direction": "bi",
+                "shared": True
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -817,7 +915,8 @@ class PolicyActionTest(HeatTestCase):
                 "name": "test-policy-action",
                 "description": "test policy action resource",
                 "action_type": "redirect",
-                "action_value": "7890"
+                "action_value": "7890",
+                "shared": True
             }
         }).AndReturn({'policy_action': {'id': '5678'}})
 
@@ -840,7 +939,8 @@ class PolicyActionTest(HeatTestCase):
                 "name": "test-policy-action",
                 "description": "test policy action resource",
                 "action_type": "redirect",
-                "action_value": "7890"
+                "action_value": "7890",
+                "shared": True
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -928,7 +1028,8 @@ class PolicyRuleTest(HeatTestCase):
                 "description": "test policy rule resource",
                 "enabled": True,
                 "policy_classifier_id": "7890",
-                "policy_actions": ['3456', '1234']
+                "policy_actions": ['3456', '1234'],
+                "shared": True
             }
         }).AndReturn({'policy_rule': {'id': '5678'}})
 
@@ -952,7 +1053,8 @@ class PolicyRuleTest(HeatTestCase):
                 "description": "test policy rule resource",
                 "enabled": True,
                 "policy_classifier_id": "7890",
-                "policy_actions": ['3456', '1234']
+                "policy_actions": ['3456', '1234'],
+                "shared": True
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -1040,7 +1142,8 @@ class PolicyRuleSetTest(HeatTestCase):
                 "description": "test policy rule set resource",
                 "parent_id": "3456",
                 "child_policy_rule_sets": ["7890", "1234"],
-                "policy_rules": ["2345", "6789"]
+                "policy_rules": ["2345", "6789"],
+                "shared": True
             }
         }).AndReturn({'policy_rule_set': {'id': '5678'}})
 
@@ -1064,7 +1167,8 @@ class PolicyRuleSetTest(HeatTestCase):
                 "description": "test policy rule set resource",
                 "parent_id": "3456",
                 "child_policy_rule_sets": ["7890", "1234"],
-                "policy_rules": ["2345", "6789"]
+                "policy_rules": ["2345", "6789"],
+                "shared": True
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -1156,7 +1260,8 @@ class NetworkServicePolicyTest(HeatTestCase):
                 "description": "test NSP resource",
                 "network_service_params": [
                     {'type': 'ip_single', 'name': 'vip',
-                     'value': 'self_subnet'}]
+                     'value': 'self_subnet'}],
+                "shared": True
             }
         }).AndReturn({'network_service_policy': {'id': '5678'}})
 
@@ -1181,7 +1286,8 @@ class NetworkServicePolicyTest(HeatTestCase):
                 "description": "test NSP resource",
                 "network_service_params": [
                     {'type': 'ip_single', 'name': 'vip',
-                     'value': 'self_subnet'}]
+                     'value': 'self_subnet'}],
+                "shared": True
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -1250,6 +1356,390 @@ class NetworkServicePolicyTest(HeatTestCase):
         update_template = copy.deepcopy(rsrc.t)
         update_template['Properties']['network_service_params'] = [
             {'name': 'vip-update'}]
+        scheduler.TaskRunner(rsrc.update, update_template)()
+
+        self.m.VerifyAll()
+
+
+class ExternalPolicyTest(HeatTestCase):
+
+    def setUp(self):
+        super(ExternalPolicyTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'create_external_policy')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'delete_external_policy')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'show_external_policy')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'update_external_policy')
+        self.stub_keystoneclient()
+
+    def create_external_policy(self):
+        gbpclient.Client.create_external_policy({
+            'external_policy': {
+                "name": "test-ep",
+                "description": "test EP resource",
+                "external_segments": ['1234'],
+                "provided_policy_rule_sets": {
+                    '2345': "scope1",
+                    '8901': "scope2"
+                },
+                "consumed_policy_rule_sets": {
+                    '9012': "scope3",
+                    '9210': "scope4"
+                },
+                "shared": True
+            }
+        }).AndReturn({'external_policy': {'id': '5678'}})
+
+        snippet = template_format.parse(external_policy_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        return grouppolicy.ExternalPolicy(
+            'external_policy',
+            resource_defns['external_policy'], stack)
+
+    def test_create(self):
+        rsrc = self.create_external_policy()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_failed(self):
+        gbpclient.Client.create_external_policy({
+            'external_policy': {
+                "name": "test-ep",
+                "description": "test EP resource",
+                "external_segments": ['1234'],
+                "provided_policy_rule_sets": {
+                    '2345': "scope1",
+                    '8901': "scope2"
+                },
+                "consumed_policy_rule_sets": {
+                    '9012': "scope3",
+                    '9210': "scope4"
+                },
+                "shared": True
+            }
+        }).AndRaise(grouppolicy.NeutronClientException())
+        self.m.ReplayAll()
+
+        snippet = template_format.parse(external_policy_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        rsrc = grouppolicy.ExternalPolicy(
+            'external_policy',
+            resource_defns['external_policy'], stack)
+
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.create))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete(self):
+        gbpclient.Client.delete_external_policy('5678')
+        gbpclient.Client.show_external_policy('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_external_policy()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_already_gone(self):
+        gbpclient.Client.delete_external_policy('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_external_policy()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_failed(self):
+        gbpclient.Client.delete_external_policy('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=400))
+
+        rsrc = self.create_external_policy()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.delete))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_update(self):
+        rsrc = self.create_external_policy()
+        gbpclient.Client.update_external_policy(
+            '5678', {'external_policy':
+                     {'external_segments': ['9876']}})
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+
+        update_template = copy.deepcopy(rsrc.t)
+        update_template['Properties']['external_segments'] = [
+            '9876']
+        scheduler.TaskRunner(rsrc.update, update_template)()
+
+        self.m.VerifyAll()
+
+
+class ExternalSegmentTest(HeatTestCase):
+
+    def setUp(self):
+        super(ExternalSegmentTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'create_external_segment')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'delete_external_segment')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'show_external_segment')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'update_external_segment')
+        self.stub_keystoneclient()
+
+    def create_external_segment(self):
+        gbpclient.Client.create_external_segment({
+            'external_segment': {
+                "name": "test-es",
+                "description": "test ES resource",
+                "ip_version": '6',
+                "cidr": "192.168.0.0/24",
+                "external_routes": [{
+                    "destination": "0.0.0.0/0",
+                    "nexthop": "null"
+                }],
+                "port_address_translation": True,
+                "shared": True
+            }
+        }).AndReturn({'external_segment': {'id': '5678'}})
+
+        snippet = template_format.parse(external_segment_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        return grouppolicy.ExternalSegment(
+            'external_segment',
+            resource_defns['external_segment'], stack)
+
+    def test_create(self):
+        rsrc = self.create_external_segment()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_failed(self):
+        gbpclient.Client.create_external_segment({
+            'external_segment': {
+                "name": "test-es",
+                "description": "test ES resource",
+                "ip_version": '6',
+                "cidr": "192.168.0.0/24",
+                "external_routes": [{
+                    "destination": "0.0.0.0/0",
+                    "nexthop": "null"
+                }],
+                "port_address_translation": True,
+                "shared": True
+            }
+        }).AndRaise(grouppolicy.NeutronClientException())
+        self.m.ReplayAll()
+
+        snippet = template_format.parse(external_segment_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        rsrc = grouppolicy.ExternalSegment(
+            'external_segment',
+            resource_defns['external_segment'], stack)
+
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.create))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete(self):
+        gbpclient.Client.delete_external_segment('5678')
+        gbpclient.Client.show_external_segment('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_external_segment()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_already_gone(self):
+        gbpclient.Client.delete_external_segment('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_external_segment()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_failed(self):
+        gbpclient.Client.delete_external_segment('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=400))
+
+        rsrc = self.create_external_segment()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.delete))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_update(self):
+        rsrc = self.create_external_segment()
+        gbpclient.Client.update_external_segment(
+            '5678', {'external_segment':
+                     {"port_address_translation": False}})
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+
+        update_template = copy.deepcopy(rsrc.t)
+        update_template['Properties']['port_address_translation'] = False
+        scheduler.TaskRunner(rsrc.update, update_template)()
+
+        self.m.VerifyAll()
+
+
+class NATPoolTest(HeatTestCase):
+
+    def setUp(self):
+        super(NATPoolTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'create_nat_pool')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'delete_nat_pool')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'show_nat_pool')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'update_nat_pool')
+        self.stub_keystoneclient()
+
+    def create_nat_pool(self):
+        gbpclient.Client.create_nat_pool({
+            'nat_pool': {
+                "name": "test-nat-pool",
+                "description": "test NP resource",
+                "ip_version": '6',
+                "ip_pool": "192.168.0.0/24",
+                "external_segment_id": '1234',
+                "shared": True
+            }
+        }).AndReturn({'nat_pool': {'id': '5678'}})
+
+        snippet = template_format.parse(nat_pool_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        return grouppolicy.NATPool(
+            'nat_pool',
+            resource_defns['nat_pool'], stack)
+
+    def test_create(self):
+        rsrc = self.create_nat_pool()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_failed(self):
+        gbpclient.Client.create_nat_pool({
+            'nat_pool': {
+                "name": "test-nat-pool",
+                "description": "test NP resource",
+                "ip_version": '6',
+                "ip_pool": "192.168.0.0/24",
+                "external_segment_id": '1234',
+                "shared": True
+            }
+        }).AndRaise(grouppolicy.NeutronClientException())
+        self.m.ReplayAll()
+
+        snippet = template_format.parse(nat_pool_template)
+        stack = utils.parse_stack(snippet)
+        resource_defns = stack.t.resource_definitions(stack)
+        rsrc = grouppolicy.NATPool(
+            'nat_pool',
+            resource_defns['nat_pool'], stack)
+
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.create))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete(self):
+        gbpclient.Client.delete_nat_pool('5678')
+        gbpclient.Client.show_nat_pool('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_nat_pool()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_already_gone(self):
+        gbpclient.Client.delete_nat_pool('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_nat_pool()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_failed(self):
+        gbpclient.Client.delete_nat_pool('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=400))
+
+        rsrc = self.create_nat_pool()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.delete))
+        self.assertEqual(
+            'NeutronClientException: An unknown exception occurred.',
+            str(error))
+        self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_update(self):
+        rsrc = self.create_nat_pool()
+        gbpclient.Client.update_nat_pool(
+            '5678', {'nat_pool':
+                     {"external_segment_id": '9876'}})
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+
+        update_template = copy.deepcopy(rsrc.t)
+        update_template['Properties']['external_segment_id'] = '9876'
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
