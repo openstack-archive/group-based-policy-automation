@@ -14,4 +14,4 @@ import pbr.version
 
 
 __version__ = pbr.version.VersionInfo(
-    'gbpautomation').version_string()
+    'group-based-policy-automation').version_string()
