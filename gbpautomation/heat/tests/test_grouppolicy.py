@@ -263,6 +263,7 @@ external_segment_template = '''
           "description": "test ES resource",
           "ip_version": '6',
           "cidr": "192.168.0.0/24",
+          "subnet_id": "some-subnet-id",
           "external_routes": [{
               "destination": "0.0.0.0/0",
               "nexthop": "null"
@@ -1516,6 +1517,7 @@ class ExternalSegmentTest(HeatTestCase):
                 "description": "test ES resource",
                 "ip_version": '6',
                 "cidr": "192.168.0.0/24",
+                "subnet_id": "some-subnet-id",
                 "external_routes": [{
                     "destination": "0.0.0.0/0",
                     "nexthop": "null"
@@ -1546,6 +1548,7 @@ class ExternalSegmentTest(HeatTestCase):
                 "description": "test ES resource",
                 "ip_version": '6',
                 "cidr": "192.168.0.0/24",
+                "subnet_id": "some-subnet-id",
                 "external_routes": [{
                     "destination": "0.0.0.0/0",
                     "nexthop": "null"
