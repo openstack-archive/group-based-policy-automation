@@ -936,11 +936,12 @@ class ExternalPolicy(gbpresource.GBPResource):
 class ExternalSegment(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, IP_VERSION, CIDR,
+        TENANT_ID, NAME, DESCRIPTION, IP_VERSION, CIDR, SUBNET_ID,
         EXTERNAL_ROUTES, PORT_ADDRESS_TRANSLATION, SHARED
     ) = (
         'tenant_id', 'name', 'description', 'ip_version', 'cidr',
-        'external_routes', 'port_address_translation', 'shared'
+        'subnet_id', 'external_routes', 'port_address_translation',
+        'shared'
     )
 
     properties_schema = {
@@ -968,6 +969,11 @@ class ExternalSegment(gbpresource.GBPResource):
             _('CIDR of the external segment.'),
             default=None, update_allowed=False
         ),
+        SUBNET_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Subnet ID of the neutron external network.'),
+            default=None, update_allowed=False
+        ),
         EXTERNAL_ROUTES: properties.Schema(
             properties.Schema.LIST,
             _('External routes of the external segment.'),
@@ -976,7 +982,7 @@ class ExternalSegment(gbpresource.GBPResource):
         PORT_ADDRESS_TRANSLATION: properties.Schema(
             properties.Schema.BOOLEAN,
             _('Port address translation required for the external segment.'),
-            update_allowed=True, required=True
+            update_allowed=True, default=False
         ),
         SHARED: properties.Schema(
             properties.Schema.BOOLEAN,
