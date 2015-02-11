@@ -547,12 +547,40 @@ class PolicyTargetGroupTest(HeatTestCase):
     def test_update(self):
         rsrc = self.create_policy_target_group()
         gbpclient.Client.update_policy_target_group(
-            '5678', {'policy_target_group': {'l2_policy_id': 'l2_id_update'}})
+            '5678', {'policy_target_group': {
+                'l2_policy_id': 'l2_id_update',
+                'provided_policy_rule_sets': {
+                    'policy_rule_set1': 'scope1',
+                    'policy_rule_set2': 'scope2',
+                    'policy_rule_set5': 'scope5'
+                },
+                'consumed_policy_rule_sets': {
+                    'policy_rule_set3': 'scope3',
+                    'policy_rule_set4': 'scope4',
+                    'policy_rule_set6': 'scope6'
+                },
+            }})
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
         update_template['Properties']['l2_policy_id'] = 'l2_id_update'
+        update_template['Properties']['provided_policy_rule_sets'] = [
+            {'policy_rule_set_id': 'policy_rule_set1',
+             'policy_rule_set_scope': 'scope1'},
+            {'policy_rule_set_id': 'policy_rule_set2',
+             'policy_rule_set_scope': 'scope2'},
+            {'policy_rule_set_id': 'policy_rule_set5',
+             'policy_rule_set_scope': 'scope5'}
+        ]
+        update_template['Properties']['consumed_policy_rule_sets'] = [
+            {'policy_rule_set_id': 'policy_rule_set3',
+             'policy_rule_set_scope': 'scope3'},
+            {'policy_rule_set_id': 'policy_rule_set4',
+             'policy_rule_set_scope': 'scope4'},
+            {'policy_rule_set_id': 'policy_rule_set6',
+             'policy_rule_set_scope': 'scope6'}
+        ]
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -1483,14 +1511,40 @@ class ExternalPolicyTest(HeatTestCase):
     def test_update(self):
         rsrc = self.create_external_policy()
         gbpclient.Client.update_external_policy(
-            '5678', {'external_policy':
-                     {'external_segments': ['9876']}})
+            '5678', {'external_policy': {
+                'external_segments': ['9876'],
+                'provided_policy_rule_sets': {
+                    '2345': 'scope1',
+                    '8901': 'scope2',
+                    '1122': 'scope5'},
+                'consumed_policy_rule_sets': {
+                    '9012': 'scope3',
+                    '9210': 'scope4',
+                    '9900': 'scope6'
+                }
+            }})
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
         update_template['Properties']['external_segments'] = [
             '9876']
+        update_template['Properties']['provided_policy_rule_sets'] = [
+            {'policy_rule_set_id': '2345',
+             'policy_rule_set_scope': 'scope1'},
+            {'policy_rule_set_id': '8901',
+             'policy_rule_set_scope': 'scope2'},
+            {'policy_rule_set_id': '1122',
+             'policy_rule_set_scope': 'scope5'}
+        ]
+        update_template['Properties']['consumed_policy_rule_sets'] = [
+            {'policy_rule_set_id': '9012',
+             'policy_rule_set_scope': 'scope3'},
+            {'policy_rule_set_id': '9210',
+             'policy_rule_set_scope': 'scope4'},
+            {'policy_rule_set_id': '9900',
+             'policy_rule_set_scope': 'scope6'}
+        ]
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
