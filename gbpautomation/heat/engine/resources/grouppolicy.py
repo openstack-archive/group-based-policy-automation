@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from gbpautomation.heat.engine.resources.neutron import gbpresource
+from gbpautomation.heat.engine.resources import gbpresource
 from neutronclient.common.exceptions import NeutronClientException
 
 from heat.engine import attributes
@@ -1085,16 +1085,16 @@ class NATPool(gbpresource.GBPResource):
 
 def resource_mapping():
     return {
-        'OS::Neutron::PolicyTarget': PolicyTarget,
-        'OS::Neutron::PolicyTargetGroup': PolicyTargetGroup,
-        'OS::Neutron::L2Policy': L2Policy,
-        'OS::Neutron::L3Policy': L3Policy,
-        'OS::Neutron::PolicyClassifier': PolicyClassifier,
-        'OS::Neutron::PolicyAction': PolicyAction,
-        'OS::Neutron::PolicyRule': PolicyRule,
-        'OS::Neutron::PolicyRuleSet': PolicyRuleSet,
-        'OS::Neutron::NetworkServicePolicy': NetworkServicePolicy,
-        'OS::Neutron::ExternalPolicy': ExternalPolicy,
-        'OS::Neutron::ExternalSegment': ExternalSegment,
-        'OS::Neutron::NATPool': NATPool
+        'OS::GroupBasedPolicy::PolicyTarget': PolicyTarget,
+        'OS::GroupBasedPolicy::PolicyTargetGroup': PolicyTargetGroup,
+        'OS::GroupBasedPolicy::L2Policy': L2Policy,
+        'OS::GroupBasedPolicy::L3Policy': L3Policy,
+        'OS::GroupBasedPolicy::PolicyClassifier': PolicyClassifier,
+        'OS::GroupBasedPolicy::PolicyAction': PolicyAction,
+        'OS::GroupBasedPolicy::PolicyRule': PolicyRule,
+        'OS::GroupBasedPolicy::PolicyRuleSet': PolicyRuleSet,
+        'OS::GroupBasedPolicy::NetworkServicePolicy': NetworkServicePolicy,
+        'OS::GroupBasedPolicy::ExternalPolicy': ExternalPolicy,
+        'OS::GroupBasedPolicy::ExternalSegment': ExternalSegment,
+        'OS::GroupBasedPolicy::NATPool': NATPool
     }
