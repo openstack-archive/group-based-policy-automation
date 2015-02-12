@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from gbpautomation.heat.engine.resources.neutron import gbpresource
-from neutronclient.common.exceptions import NeutronClientException
-
+from gbpautomation.heat.engine.resources import gbpresource
+from heat.common.i18n import _
 from heat.engine import properties
+from neutronclient.common.exceptions import NeutronClientException
 
 
 class ServiceChainNode(gbpresource.GBPResource):
@@ -161,6 +161,6 @@ class ServiceChainSpec(gbpresource.GBPResource):
 
 def resource_mapping():
     return {
-        'OS::Neutron::ServiceChainNode': ServiceChainNode,
-        'OS::Neutron::ServiceChainSpec': ServiceChainSpec,
+        'OS::ServiceChain::ServiceChainNode': ServiceChainNode,
+        'OS::ServiceChain::ServiceChainSpec': ServiceChainSpec,
     }
