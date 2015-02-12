@@ -12,7 +12,7 @@
 
 import copy
 
-from gbpautomation.heat.engine.resources.neutron import servicechain
+from gbpautomation.heat.engine.resources import servicechain
 from gbpclient.v2_0 import client as gbpclient
 from heat.common import exception
 from heat.common import template_format

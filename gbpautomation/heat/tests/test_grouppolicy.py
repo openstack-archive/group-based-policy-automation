@@ -13,7 +13,7 @@
 import copy
 import six
 
-from gbpautomation.heat.engine.resources.neutron import grouppolicy
+from gbpautomation.heat.engine.resources import grouppolicy
 from gbpclient.v2_0 import client as gbpclient
 from heat.common import exception
 from heat.common import template_format
