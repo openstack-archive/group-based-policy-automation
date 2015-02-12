@@ -12,7 +12,7 @@
 
 import copy
 
-from gbpautomation.heat.engine.resources.neutron import servicechain
+from gbpautomation.heat.engine.resources import servicechain
 from gbpclient.v2_0 import client as gbpclient
 from heat.common import exception
 from heat.common import template_format
@@ -29,7 +29,7 @@ servicechain_node_template = '''
   "Parameters" : {},
   "Resources" : {
     "servicechain_node": {
-      "Type": "OS::Neutron::ServiceChainNode",
+      "Type": "OS::ServiceChain::ServiceChainNode",
       "Properties": {
         "name": "test-sc-node",
         "description": "test service chain node resource",
@@ -48,7 +48,7 @@ servicechain_spec_template = '''
   "Parameters" : {},
   "Resources" : {
     "servicechain_spec": {
-      "Type": "OS::Neutron::ServiceChainSpec",
+      "Type": "OS::ServiceChain::ServiceChainSpec",
       "Properties": {
         "name": "test-sc-spec",
         "description": "test service chain spec resource",
