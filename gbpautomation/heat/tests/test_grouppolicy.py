@@ -13,7 +13,7 @@
 import copy
 import six
 
-from gbpautomation.heat.engine.resources.neutron import grouppolicy
+from gbpautomation.heat.engine.resources import grouppolicy
 from gbpclient.v2_0 import client as gbpclient
 from heat.common import exception
 from heat.common import template_format
@@ -30,7 +30,7 @@ policy_target_template = '''
   "Parameters" : {},
   "Resources" : {
     "policy_target": {
-      "Type": "OS::Neutron::PolicyTarget",
+      "Type": "OS::GroupBasedPolicy::PolicyTarget",
       "Properties": {
         "name": "test-policy-target",
         "policy_target_group_id": "ptg-id",
@@ -48,7 +48,7 @@ policy_target_group_template = '''
   "Parameters" : {},
   "Resources" : {
     "policy_target_group": {
-      "Type": "OS::Neutron::PolicyTargetGroup",
+      "Type": "OS::GroupBasedPolicy::PolicyTargetGroup",
       "Properties": {
         "name": "test-policy-target-group",
         "description": "test policy target group resource",
@@ -79,7 +79,7 @@ l2_policy_template = '''
   "Parameters" : {},
   "Resources" : {
     "l2_policy": {
-      "Type": "OS::Neutron::L2Policy",
+      "Type": "OS::GroupBasedPolicy::L2Policy",
       "Properties": {
         "name": "test-l2-policy",
         "description": "test L2 policy resource",
@@ -98,7 +98,7 @@ l3_policy_template = '''
   "Parameters" : {},
   "Resources" : {
     "l3_policy": {
-      "Type": "OS::Neutron::L3Policy",
+      "Type": "OS::GroupBasedPolicy::L3Policy",
       "Properties": {
         "name": "test-l3-policy",
         "description": "test L3 policy resource",
@@ -119,7 +119,7 @@ policy_classifier_template = '''
   "Parameters" : {},
   "Resources" : {
   "policy_classifier": {
-      "Type": "OS::Neutron::PolicyClassifier",
+      "Type": "OS::GroupBasedPolicy::PolicyClassifier",
       "Properties": {
                 "name": "test-policy-classifier",
                 "description": "test policy classifier resource",
@@ -140,7 +140,7 @@ policy_action_template = '''
   "Parameters" : {},
   "Resources" : {
   "policy_action": {
-      "Type": "OS::Neutron::PolicyAction",
+      "Type": "OS::GroupBasedPolicy::PolicyAction",
       "Properties": {
                 "name": "test-policy-action",
                 "description": "test policy action resource",
@@ -160,7 +160,7 @@ policy_rule_template = '''
   "Parameters" : {},
   "Resources" : {
   "policy_rule": {
-      "Type": "OS::Neutron::PolicyRule",
+      "Type": "OS::GroupBasedPolicy::PolicyRule",
       "Properties": {
           "name": "test-policy-rule",
           "description": "test policy rule resource",
@@ -181,7 +181,7 @@ policy_rule_set_template = '''
   "Parameters" : {},
   "Resources" : {
   "policy_rule_set": {
-      "Type": "OS::Neutron::PolicyRuleSet",
+      "Type": "OS::GroupBasedPolicy::PolicyRuleSet",
       "Properties": {
           "name": "test-policy-rule-set",
           "description": "test policy rule set resource",
@@ -202,7 +202,7 @@ network_service_policy_template = '''
   "Parameters" : {},
   "Resources" : {
   "network_service_policy": {
-      "Type": "OS::Neutron::NetworkServicePolicy",
+      "Type": "OS::GroupBasedPolicy::NetworkServicePolicy",
       "Properties": {
           "name": "test-nsp",
           "description": "test NSP resource",
@@ -222,7 +222,7 @@ external_policy_template = '''
   "Parameters" : {},
   "Resources" : {
   "external_policy": {
-      "Type": "OS::Neutron::ExternalPolicy",
+      "Type": "OS::GroupBasedPolicy::ExternalPolicy",
       "Properties": {
           "name": "test-ep",
           "description": "test EP resource",
@@ -257,7 +257,7 @@ external_segment_template = '''
   "Parameters" : {},
   "Resources" : {
   "external_segment": {
-      "Type": "OS::Neutron::ExternalSegment",
+      "Type": "OS::GroupBasedPolicy::ExternalSegment",
       "Properties": {
           "name": "test-es",
           "description": "test ES resource",
@@ -284,7 +284,7 @@ nat_pool_template = '''
   "Parameters" : {},
   "Resources" : {
   "nat_pool": {
-      "Type": "OS::Neutron::NATPool",
+      "Type": "OS::GroupBasedPolicy::NATPool",
       "Properties": {
           "name": "test-nat-pool",
           "description": "test NP resource",
