@@ -24,13 +24,15 @@ from heat.engine import properties
 class PolicyTarget(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, POLICY_TARGET_GROUP_ID
+        TENANT_ID, NAME, DESCRIPTION, POLICY_TARGET_GROUP_ID,
+        PORT_ID
     ) = (
-        'tenant_id', 'name', 'description', 'policy_target_group_id'
+        'tenant_id', 'name', 'description', 'policy_target_group_id',
+        'port_id'
     )
 
     ATTRIBUTES = (
-        PORT_ID
+        PORT_ID_ATTR
     ) = (
         'port_id'
     )
@@ -55,12 +57,17 @@ class PolicyTarget(gbpresource.GBPResource):
             _('Policy target group id of the policy target.'),
             required=True,
             update_allowed=True
+        ),
+        PORT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Neutron port id of the policy target.'),
+            update_allowed=False
         )
     }
 
     attributes_schema = {
-        PORT_ID: attributes.Schema(
-            _("Neutron port id of this policy target")
+        PORT_ID_ATTR: attributes.Schema(
+            _('Neutron port id of this policy target.')
         )
     }
 
@@ -81,13 +88,6 @@ class PolicyTarget(gbpresource.GBPResource):
             {'policy_target': props})['policy_target']
 
         self.resource_id_set(pt['id'])
-
-    def _resolve_attribute(self, name):
-        client = self.grouppolicy()
-        pt_id = self.resource_id
-        if name == 'port_id':
-            return client.show_policy_target(pt_id)['policy_target']['port_id']
-        return super(PolicyTarget, self)._resolve_attribute(name)
 
     def handle_delete(self):
 
