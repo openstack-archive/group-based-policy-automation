@@ -221,6 +221,36 @@ class PolicyTargetGroup(gbpresource.GBPResource):
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
         if prop_diff:
+            provided_policy_rule_set_list = {}
+            consumed_policy_rule_set_list = {}
+            props_provided_policy_rule_sets = prop_diff.get(
+                'provided_policy_rule_sets', [])
+            props_consumed_policy_rule_sets = prop_diff.get(
+                'consumed_policy_rule_sets', [])
+
+            for prop_prov_policy_rule_set in props_provided_policy_rule_sets:
+                policy_rule_set_id = (
+                    prop_prov_policy_rule_set['policy_rule_set_id'])
+                policy_rule_set_scope = (
+                    prop_prov_policy_rule_set['policy_rule_set_scope'])
+                provided_policy_rule_set_list.update({policy_rule_set_id:
+                                                      policy_rule_set_scope})
+
+            for prop_cons_policy_rule_set in props_consumed_policy_rule_sets:
+                policy_rule_set_id = (
+                    prop_cons_policy_rule_set['policy_rule_set_id'])
+                policy_rule_set_scope = (
+                    prop_cons_policy_rule_set['policy_rule_set_scope'])
+                consumed_policy_rule_set_list.update({policy_rule_set_id:
+                                                      policy_rule_set_scope})
+
+            if provided_policy_rule_set_list:
+                prop_diff['provided_policy_rule_sets'] = (
+                    provided_policy_rule_set_list)
+            if consumed_policy_rule_set_list:
+                prop_diff['consumed_policy_rule_sets'] = (
+                    consumed_policy_rule_set_list)
+
             self.grouppolicy().update_policy_target_group(
                 self.resource_id, {'policy_target_group': prop_diff})
 
@@ -900,6 +930,36 @@ class ExternalPolicy(gbpresource.GBPResource):
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
         if prop_diff:
+            provided_policy_rule_set_list = {}
+            consumed_policy_rule_set_list = {}
+            props_provided_policy_rule_sets = prop_diff.get(
+                'provided_policy_rule_sets', [])
+            props_consumed_policy_rule_sets = prop_diff.get(
+                'consumed_policy_rule_sets', [])
+
+            for prop_prov_policy_rule_set in props_provided_policy_rule_sets:
+                policy_rule_set_id = (
+                    prop_prov_policy_rule_set['policy_rule_set_id'])
+                policy_rule_set_scope = (
+                    prop_prov_policy_rule_set['policy_rule_set_scope'])
+                provided_policy_rule_set_list.update({policy_rule_set_id:
+                                                      policy_rule_set_scope})
+
+            for prop_cons_policy_rule_set in props_consumed_policy_rule_sets:
+                policy_rule_set_id = (
+                    prop_cons_policy_rule_set['policy_rule_set_id'])
+                policy_rule_set_scope = (
+                    prop_cons_policy_rule_set['policy_rule_set_scope'])
+                consumed_policy_rule_set_list.update({policy_rule_set_id:
+                                                      policy_rule_set_scope})
+
+            if provided_policy_rule_set_list:
+                prop_diff['provided_policy_rule_sets'] = (
+                    provided_policy_rule_set_list)
+            if consumed_policy_rule_set_list:
+                prop_diff['consumed_policy_rule_sets'] = (
+                    consumed_policy_rule_set_list)
+
             self.grouppolicy().update_external_policy(
                 self.resource_id, {'external_policy': prop_diff})
 
