@@ -14,7 +14,8 @@
 from heat.common import exception
 from heat.engine import resource
 from heat.engine import scheduler
-from heat.openstack.common import log as logging
+from oslo_log import log as logging
+
 
 LOG = logging.getLogger(__name__)
 
@@ -27,9 +28,7 @@ class GBPResource(resource.Resource):
         return self.client('grouppolicy')
 
     def validate(self):
-        '''
-        Validate any of the provided params
-        '''
+        '''Validate any of the provided params'''
         res = super(GBPResource, self).validate()
         if res:
             return res
@@ -37,10 +36,10 @@ class GBPResource(resource.Resource):
 
     @staticmethod
     def validate_properties(properties):
-        '''
+        '''Validates update parameters.
+
         Validates to ensure nothing in value_specs overwrites
         any key that exists in the schema.
-
         Also ensures that shared and tenant_id is not specified
         in value_specs.
         '''
@@ -68,10 +67,10 @@ class GBPResource(resource.Resource):
 
     @staticmethod
     def prepare_properties(properties, name):
-        '''
+        '''Prepare allowed property keys.
+
         Prepares the property values so that they can be passed directly to
         the Neutron create call.
-
         Removes None values and value_specs, merges value_specs with the main
         values.
         '''
@@ -87,10 +86,10 @@ class GBPResource(resource.Resource):
         return props
 
     def prepare_update_properties(self, definition):
-        '''
+        '''Prepare allowed keys for property update.
+
         Prepares the property values so that they can be passed directly to
         the Neutron update call.
-
         Removes any properties which are not update_allowed, then processes
         as for prepare_properties.
         '''
