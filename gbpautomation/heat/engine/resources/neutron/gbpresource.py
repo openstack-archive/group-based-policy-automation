@@ -14,7 +14,8 @@
 from heat.common import exception
 from heat.engine import resource
 from heat.engine import scheduler
-from heat.openstack.common import log as logging
+from oslo_log import log as logging
+
 
 LOG = logging.getLogger(__name__)
 

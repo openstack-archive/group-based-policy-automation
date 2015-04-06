@@ -13,10 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from gbpautomation.heat.engine.resources.neutron import gbpresource
 from neutronclient.common.exceptions import NeutronClientException
-
+from heat.common.i18n import _
 from heat.engine import properties
+
+from gbpautomation.heat.engine.resources.neutron import gbpresource
 
 
 class ServiceChainNode(gbpresource.GBPResource):
