@@ -2,22 +2,22 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 
--e git://github.com/openstack/heat.git@stable/juno#egg=heat
+-e git://github.com/openstack/heat.git@master#egg=heat
 -e git://github.com/stackforge/python-group-based-policy-client.git@master#egg=gbpclient
 # Hacking already pins down pep8, pyflakes and flake8
-hacking>=0.8.0,<0.9
+hacking<0.11,>=0.10.0
 coverage>=3.6
 discover
 lockfile>=0.8
 mock>=1.0
-python-neutronclient==2.3.9
+python-neutronclient==2.3.11
 python-subunit>=0.0.18
 mox>=0.5.3
 MySQL-python
-oslosphinx>=2.2.0  # Apache-2.0
-oslotest>=1.1.0  # Apache-2.0
+oslosphinx>=2.5.0,<2.6.0  # Apache-2.0
+oslotest>=1.5.1,<1.6.0  # Apache-2.0
 psycopg2
-sphinx>=1.1.2,!=1.2.0,<1.3
+sphinx>=1.1.2,!=1.2.0,!=1.3b1,<1.3
 testrepository>=0.0.18
 testscenarios>=0.4
-testtools>=0.9.34
+testtools>=0.9.36,!=1.2.0
