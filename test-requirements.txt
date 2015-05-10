@@ -2,7 +2,7 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 
--e git://github.com/openstack/heat.git@master#egg=heat
+-e git://github.com/openstack/heat.git@stable/kilo#egg=heat
 -e git://github.com/stackforge/python-group-based-policy-client.git@master#egg=gbpclient
 # Hacking already pins down pep8, pyflakes and flake8
 hacking<0.11,>=0.10.0
