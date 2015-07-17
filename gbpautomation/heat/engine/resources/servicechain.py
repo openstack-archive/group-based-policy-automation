@@ -22,9 +22,9 @@ from neutronclient.common.exceptions import NeutronClientException
 class ServiceChainNode(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, SERVICE_TYPE, CONFIG
+        TENANT_ID, NAME, DESCRIPTION, SERVICE_TYPE, CONFIG, SHARED
     ) = (
-        'tenant_id', 'name', 'description', 'service_type', 'config'
+        'tenant_id', 'name', 'description', 'service_type', 'config', 'shared'
     )
 
     properties_schema = {
@@ -53,6 +53,11 @@ class ServiceChainNode(gbpresource.GBPResource):
             _('Configuration of the service chain node.'),
             required=True,
             update_allowed=False
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
     }
 
@@ -95,9 +100,9 @@ class ServiceChainNode(gbpresource.GBPResource):
 class ServiceChainSpec(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, NODES
+        TENANT_ID, NAME, DESCRIPTION, NODES, SHARED
     ) = (
-        'tenant_id', 'name', 'description', 'nodes'
+        'tenant_id', 'name', 'description', 'nodes', 'shared'
     )
 
     properties_schema = {
@@ -120,6 +125,11 @@ class ServiceChainSpec(gbpresource.GBPResource):
             _('Nodes in the service chain spec.'),
             required=True,
             update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
         )
     }
 
@@ -159,8 +169,98 @@ class ServiceChainSpec(gbpresource.GBPResource):
                 self.resource_id, {'servicechain_spec': prop_diff})
 
 
+class ServiceProfile(gbpresource.GBPResource):
+
+    PROPERTIES = (
+        TENANT_ID, NAME, DESCRIPTION, SHARED, VENDOR, INSERTION_MODE,
+        SERVICE_TYPE, SERVICE_FLAVOR
+    ) = (
+        'tenant_id', 'name', 'description', 'shared', 'vendor',
+        'insertion_mode', 'service_type', 'service_flavor'
+    )
+
+    properties_schema = {
+        TENANT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Tenant id of the service profile.')
+        ),
+        NAME: properties.Schema(
+            properties.Schema.STRING,
+            _('Name of the service profile.'),
+            update_allowed=True
+        ),
+        DESCRIPTION: properties.Schema(
+            properties.Schema.STRING,
+            _('Description of the service profile.'),
+            update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared resource or not.'),
+            update_allowed=True
+        ),
+        VENDOR: properties.Schema(
+            properties.Schema.STRING,
+            _('Vendor providing the service node'),
+            update_allowed=True
+        ),
+        INSERTION_MODE: properties.Schema(
+            properties.Schema.STRING,
+            _('Insertion mode of the service'),
+            update_allowed=True
+        ),
+        SERVICE_TYPE: properties.Schema(
+            properties.Schema.STRING,
+            _('Type of the service.'),
+            required=True,
+            update_allowed=True
+        ),
+        SERVICE_FLAVOR: properties.Schema(
+            properties.Schema.STRING,
+            _('Flavor of the service'),
+            update_allowed=False
+        )
+    }
+
+    def _show_resource(self):
+        client = self.grouppolicy()
+        svc_profile_id = self.resource_id
+        return client.show_service_profile(svc_profile_id)['service_profile']
+
+    def handle_create(self):
+        client = self.grouppolicy()
+
+        props = {}
+        for key in self.properties:
+            if self.properties.get(key) is not None:
+                props[key] = self.properties.get(key)
+
+        svc_profile = client.create_service_profile(
+            {'service_profile': props})['service_profile']
+
+        self.resource_id_set(svc_profile['id'])
+
+    def handle_delete(self):
+
+        client = self.grouppolicy()
+        svc_profile_id = self.resource_id
+
+        try:
+            client.delete_service_profile(svc_profile_id)
+        except NeutronClientException as ex:
+            self.client_plugin().ignore_not_found(ex)
+        else:
+            return self._delete_task()
+
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        if prop_diff:
+            self.grouppolicy().update_service_profile(
+                self.resource_id, {'service_profile': prop_diff})
+
+
 def resource_mapping():
     return {
-        'OS::ServiceChain::ServiceChainNode': ServiceChainNode,
-        'OS::ServiceChain::ServiceChainSpec': ServiceChainSpec,
+        'OS::GroupBasedPolicy::ServiceChainNode': ServiceChainNode,
+        'OS::GroupBasedPolicy::ServiceChainSpec': ServiceChainSpec,
+        'OS::GroupBasedPolicy::ServiceProfile': ServiceProfile,
     }
