@@ -11,6 +11,7 @@
 #    under the License.
 
 import copy
+import six
 
 from gbpautomation.heat.engine.resources import servicechain
 from gbpclient.v2_0 import client as gbpclient
@@ -81,10 +82,11 @@ class ServiceChainNodeTest(HeatTestCase):
         }).AndReturn({'servicechain_node': {'id': '5678'}})
 
         snippet = template_format.parse(servicechain_node_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return servicechain.ServiceChainNode(
-            'servicechain_node', resource_defns['servicechain_node'], stack)
+            'servicechain_node', resource_defns['servicechain_node'],
+            self.stack)
 
     def test_create(self):
         rsrc = self.create_servicechain_node()
@@ -105,16 +107,18 @@ class ServiceChainNodeTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(servicechain_node_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = servicechain.ServiceChainNode(
-            'servicechain_node', resource_defns['servicechain_node'], stack)
+            'servicechain_node', resource_defns['servicechain_node'],
+            self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
         self.assertEqual(
-            'NeutronClientException: An unknown exception occurred.',
-            str(error))
+            'NeutronClientException: resources.servicechain_node: '
+            'An unknown exception occurred.',
+            six.text_type(error))
         self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
         self.m.VerifyAll()
 
@@ -151,8 +155,9 @@ class ServiceChainNodeTest(HeatTestCase):
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.delete))
         self.assertEqual(
-            'NeutronClientException: An unknown exception occurred.',
-            str(error))
+            'NeutronClientException: resources.servicechain_node: '
+            'An unknown exception occurred.',
+            six.text_type(error))
         self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
         self.m.VerifyAll()
 
@@ -190,10 +195,11 @@ class ServiceChainSpecTest(HeatTestCase):
         }).AndReturn({'servicechain_spec': {'id': '5678'}})
 
         snippet = template_format.parse(servicechain_spec_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return servicechain.ServiceChainSpec(
-            'servicechain_spec', resource_defns['servicechain_spec'], stack)
+            'servicechain_spec', resource_defns['servicechain_spec'],
+            self.stack)
 
     def test_create(self):
         rsrc = self.create_servicechain_spec()
@@ -213,16 +219,18 @@ class ServiceChainSpecTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(servicechain_spec_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = servicechain.ServiceChainSpec(
-            'servicechain_spec', resource_defns['servicechain_spec'], stack)
+            'servicechain_spec', resource_defns['servicechain_spec'],
+            self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
         self.assertEqual(
-            'NeutronClientException: An unknown exception occurred.',
-            str(error))
+            'NeutronClientException: resources.servicechain_spec: '
+            'An unknown exception occurred.',
+            six.text_type(error))
         self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
         self.m.VerifyAll()
 
@@ -259,8 +267,9 @@ class ServiceChainSpecTest(HeatTestCase):
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.delete))
         self.assertEqual(
-            'NeutronClientException: An unknown exception occurred.',
-            str(error))
+            'NeutronClientException: resources.servicechain_spec: '
+            'An unknown exception occurred.',
+            six.text_type(error))
         self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
         self.m.VerifyAll()
 
