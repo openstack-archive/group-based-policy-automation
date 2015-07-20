@@ -319,10 +319,10 @@ class PolicyTargetTest(HeatTestCase):
         }).AndReturn({'policy_target': {'id': '5678'}})
 
         snippet = template_format.parse(policy_target_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.PolicyTarget(
-            'policy_target', resource_defns['policy_target'], stack)
+            'policy_target', resource_defns['policy_target'], self.stack)
 
     def test_create(self):
         rsrc = self.create_policy_target()
@@ -342,10 +342,10 @@ class PolicyTargetTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(policy_target_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.PolicyTarget(
-            'policy_target', resource_defns['policy_target'], stack)
+            'policy_target', resource_defns['policy_target'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -459,11 +459,11 @@ class PolicyTargetGroupTest(HeatTestCase):
         }).AndReturn({'policy_target_group': {'id': '5678'}})
 
         snippet = template_format.parse(policy_target_group_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.PolicyTargetGroup(
             'policy_target_group', resource_defns['policy_target_group'],
-            stack)
+            self.stack)
 
     def test_create(self):
         rsrc = self.create_policy_target_group()
@@ -492,11 +492,11 @@ class PolicyTargetGroupTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(policy_target_group_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.PolicyTargetGroup(
             'policy_target_group', resource_defns['policy_target_group'],
-            stack)
+            self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -607,10 +607,10 @@ class L2PolicyTest(HeatTestCase):
         }).AndReturn({'l2_policy': {'id': '5678'}})
 
         snippet = template_format.parse(l2_policy_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.L2Policy(
-            'l2_policy', resource_defns['l2_policy'], stack)
+            'l2_policy', resource_defns['l2_policy'], self.stack)
 
     def test_create(self):
         rsrc = self.create_l2_policy()
@@ -631,10 +631,10 @@ class L2PolicyTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(l2_policy_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.L2Policy(
-            'l2_policy', resource_defns['l2_policy'], stack)
+            'l2_policy', resource_defns['l2_policy'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -719,10 +719,10 @@ class L3PolicyTest(HeatTestCase):
         }).AndReturn({'l3_policy': {'id': '5678'}})
 
         snippet = template_format.parse(l3_policy_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.L3Policy(
-            'l3_policy', resource_defns['l3_policy'], stack)
+            'l3_policy', resource_defns['l3_policy'], self.stack)
 
     def test_create(self):
         rsrc = self.create_l3_policy()
@@ -745,10 +745,10 @@ class L3PolicyTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(l3_policy_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.L3Policy(
-            'l3_policy', resource_defns['l3_policy'], stack)
+            'l3_policy', resource_defns['l3_policy'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -837,10 +837,11 @@ class PolicyClassifierTest(HeatTestCase):
         }).AndReturn({'policy_classifier': {'id': '5678'}})
 
         snippet = template_format.parse(policy_classifier_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.PolicyClassifier(
-            'policy_classifier', resource_defns['policy_classifier'], stack)
+            'policy_classifier', resource_defns['policy_classifier'],
+            self.stack)
 
     def test_create(self):
         rsrc = self.create_policy_classifier()
@@ -863,10 +864,11 @@ class PolicyClassifierTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(policy_classifier_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.PolicyClassifier(
-            'policy_classifier', resource_defns['policy_classifier'], stack)
+            'policy_classifier', resource_defns['policy_classifier'],
+            self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -950,10 +952,10 @@ class PolicyActionTest(HeatTestCase):
         }).AndReturn({'policy_action': {'id': '5678'}})
 
         snippet = template_format.parse(policy_action_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.PolicyAction(
-            'policy_action', resource_defns['policy_action'], stack)
+            'policy_action', resource_defns['policy_action'], self.stack)
 
     def test_create(self):
         rsrc = self.create_policy_action()
@@ -975,10 +977,10 @@ class PolicyActionTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(policy_action_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.PolicyAction(
-            'policy_action', resource_defns['policy_action'], stack)
+            'policy_action', resource_defns['policy_action'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -1063,10 +1065,10 @@ class PolicyRuleTest(HeatTestCase):
         }).AndReturn({'policy_rule': {'id': '5678'}})
 
         snippet = template_format.parse(policy_rule_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.PolicyRule(
-            'policy_rule', resource_defns['policy_rule'], stack)
+            'policy_rule', resource_defns['policy_rule'], self.stack)
 
     def test_create(self):
         rsrc = self.create_policy_rule()
@@ -1089,10 +1091,10 @@ class PolicyRuleTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(policy_rule_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.PolicyRule(
-            'policy_rule', resource_defns['policy_rule'], stack)
+            'policy_rule', resource_defns['policy_rule'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -1177,10 +1179,10 @@ class PolicyRuleSetTest(HeatTestCase):
         }).AndReturn({'policy_rule_set': {'id': '5678'}})
 
         snippet = template_format.parse(policy_rule_set_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.PolicyRuleSet(
-            'policy_rule_set', resource_defns['policy_rule_set'], stack)
+            'policy_rule_set', resource_defns['policy_rule_set'], self.stack)
 
     def test_create(self):
         rsrc = self.create_policy_rule_set()
@@ -1203,10 +1205,10 @@ class PolicyRuleSetTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(policy_rule_set_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.PolicyRuleSet(
-            'policy_rule_set', resource_defns['policy_rule_set'], stack)
+            'policy_rule_set', resource_defns['policy_rule_set'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -1295,11 +1297,11 @@ class NetworkServicePolicyTest(HeatTestCase):
         }).AndReturn({'network_service_policy': {'id': '5678'}})
 
         snippet = template_format.parse(network_service_policy_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.NetworkServicePolicy(
             'network_service_policy',
-            resource_defns['network_service_policy'], stack)
+            resource_defns['network_service_policy'], self.stack)
 
     def test_create(self):
         rsrc = self.create_network_service_policy()
@@ -1322,11 +1324,11 @@ class NetworkServicePolicyTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(network_service_policy_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.NetworkServicePolicy(
             'network_service_policy',
-            resource_defns['network_service_policy'], stack)
+            resource_defns['network_service_policy'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -1423,11 +1425,11 @@ class ExternalPolicyTest(HeatTestCase):
         }).AndReturn({'external_policy': {'id': '5678'}})
 
         snippet = template_format.parse(external_policy_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.ExternalPolicy(
             'external_policy',
-            resource_defns['external_policy'], stack)
+            resource_defns['external_policy'], self.stack)
 
     def test_create(self):
         rsrc = self.create_external_policy()
@@ -1456,11 +1458,11 @@ class ExternalPolicyTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(external_policy_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.ExternalPolicy(
             'external_policy',
-            resource_defns['external_policy'], stack)
+            resource_defns['external_policy'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -1582,11 +1584,11 @@ class ExternalSegmentTest(HeatTestCase):
         }).AndReturn({'external_segment': {'id': '5678'}})
 
         snippet = template_format.parse(external_segment_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.ExternalSegment(
             'external_segment',
-            resource_defns['external_segment'], stack)
+            resource_defns['external_segment'], self.stack)
 
     def test_create(self):
         rsrc = self.create_external_segment()
@@ -1614,11 +1616,11 @@ class ExternalSegmentTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(external_segment_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.ExternalSegment(
             'external_segment',
-            resource_defns['external_segment'], stack)
+            resource_defns['external_segment'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -1708,11 +1710,11 @@ class NATPoolTest(HeatTestCase):
         }).AndReturn({'nat_pool': {'id': '5678'}})
 
         snippet = template_format.parse(nat_pool_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return grouppolicy.NATPool(
             'nat_pool',
-            resource_defns['nat_pool'], stack)
+            resource_defns['nat_pool'], self.stack)
 
     def test_create(self):
         rsrc = self.create_nat_pool()
@@ -1735,11 +1737,11 @@ class NATPoolTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(nat_pool_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = grouppolicy.NATPool(
             'nat_pool',
-            resource_defns['nat_pool'], stack)
+            resource_defns['nat_pool'], self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))

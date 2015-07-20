@@ -81,10 +81,11 @@ class ServiceChainNodeTest(HeatTestCase):
         }).AndReturn({'servicechain_node': {'id': '5678'}})
 
         snippet = template_format.parse(servicechain_node_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return servicechain.ServiceChainNode(
-            'servicechain_node', resource_defns['servicechain_node'], stack)
+            'servicechain_node', resource_defns['servicechain_node'],
+            self.stack)
 
     def test_create(self):
         rsrc = self.create_servicechain_node()
@@ -105,10 +106,11 @@ class ServiceChainNodeTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(servicechain_node_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = servicechain.ServiceChainNode(
-            'servicechain_node', resource_defns['servicechain_node'], stack)
+            'servicechain_node', resource_defns['servicechain_node'],
+            self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
@@ -190,10 +192,11 @@ class ServiceChainSpecTest(HeatTestCase):
         }).AndReturn({'servicechain_spec': {'id': '5678'}})
 
         snippet = template_format.parse(servicechain_spec_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         return servicechain.ServiceChainSpec(
-            'servicechain_spec', resource_defns['servicechain_spec'], stack)
+            'servicechain_spec', resource_defns['servicechain_spec'],
+            self.stack)
 
     def test_create(self):
         rsrc = self.create_servicechain_spec()
@@ -213,10 +216,11 @@ class ServiceChainSpecTest(HeatTestCase):
         self.m.ReplayAll()
 
         snippet = template_format.parse(servicechain_spec_template)
-        stack = utils.parse_stack(snippet)
-        resource_defns = stack.t.resource_definitions(stack)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
         rsrc = servicechain.ServiceChainSpec(
-            'servicechain_spec', resource_defns['servicechain_spec'], stack)
+            'servicechain_spec', resource_defns['servicechain_spec'],
+            self.stack)
 
         error = self.assertRaises(exception.ResourceFailure,
                                   scheduler.TaskRunner(rsrc.create))
