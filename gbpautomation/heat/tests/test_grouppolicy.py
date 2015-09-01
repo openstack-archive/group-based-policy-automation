@@ -104,6 +104,10 @@ l3_policy_template = '''
         "description": "test L3 policy resource",
         "ip_version": "4",
         "ip_pool": "10.20.20.0",
+        "external_segments": [
+            {"external_segment_id": "es1",
+             "allocated_address": "1.1.1.1"},
+        ],
         "subnet_prefix_length": 24,
         "shared": True
       }
@@ -720,6 +724,7 @@ class L3PolicyTest(HeatTestCase):
                 "ip_version": "4",
                 "ip_pool": "10.20.20.0",
                 "subnet_prefix_length": 24,
+                "external_segments": {"es1": "1.1.1.1"},
                 "shared": True
             }
         }).AndReturn({'l3_policy': {'id': '5678'}})
@@ -807,12 +812,17 @@ class L3PolicyTest(HeatTestCase):
     def test_update(self):
         rsrc = self.create_l3_policy()
         gbpclient.Client.update_l3_policy(
-            '5678', {'l3_policy': {'subnet_prefix_length': 28}})
+            '5678', {'l3_policy': {'subnet_prefix_length': 28,
+                                   'external_segments':
+                                   {'es1': '1.1.1.1'}}})
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
         update_template['Properties']['subnet_prefix_length'] = 28
+        update_template['Properties']['external_segments'] = [
+            {'external_segment_id': 'es1',
+             'allocated_address': '1.1.1.1'}]
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
