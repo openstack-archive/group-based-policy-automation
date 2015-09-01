@@ -338,8 +338,8 @@ class L3Policy(gbpresource.GBPResource):
             update_allowed=True
         ),
         EXTERNAL_SEGMENTS: properties.Schema(
-            properties.Schema.MAP,
-            _('External segments of L3 policy.'),
+            properties.Schema.LIST,
+            _('External segments for L3 policy.'),
             update_allowed=True
         ),
         SHARED: properties.Schema(
@@ -362,6 +362,21 @@ class L3Policy(gbpresource.GBPResource):
             if self.properties.get(key) is not None:
                 props[key] = self.properties.get(key)
 
+        external_segments_dict = {}
+        props_external_segments = props.get(
+            'external_segments', [])
+
+        for prop_external_segment in props_external_segments:
+            external_segment_id = (
+                prop_external_segment['external_segment_id'])
+            allocated_address = (
+                prop_external_segment['allocated_address'])
+            external_segments_dict.update({external_segment_id:
+                                           allocated_address})
+
+        if external_segments_dict:
+            props['external_segments'] = external_segments_dict
+
         l3_policy = client.create_l3_policy(
             {'l3_policy': props})['l3_policy']
 
@@ -381,6 +396,20 @@ class L3Policy(gbpresource.GBPResource):
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
         if prop_diff:
+            external_segments_dict = {}
+            props_external_segments = prop_diff.get(
+                'external_segments', [])
+
+            for prop_external_segment in props_external_segments:
+                external_segment_id = (
+                    prop_external_segment['external_segment_id'])
+                allocated_address = (
+                    prop_external_segment['allocated_address'])
+                external_segments_dict.update({external_segment_id:
+                                               allocated_address})
+
+            if external_segments_dict:
+                prop_diff['external_segments'] = external_segments_dict
             self.grouppolicy().update_l3_policy(
                 self.resource_id, {'l3_policy': prop_diff})
 
