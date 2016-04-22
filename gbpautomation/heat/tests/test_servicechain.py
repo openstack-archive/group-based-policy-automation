@@ -35,7 +35,7 @@ servicechain_node_template = '''
         "name": "test-sc-node",
         "description": "test service chain node resource",
         "shared": True,
-        "service_type": "TAP",
+        "service_profile_id": "profile-id",
         "config": "{'name': 'sc_node_config'}"
       }
     }
@@ -100,7 +100,7 @@ class ServiceChainNodeTest(HeatTestCase):
             'servicechain_node': {
                 "name": "test-sc-node",
                 "description": "test service chain node resource",
-                "service_type": "TAP",
+                "service_profile_id": "profile-id",
                 "shared": True,
                 "config": "{'name': 'sc_node_config'}"
             }
@@ -125,7 +125,7 @@ class ServiceChainNodeTest(HeatTestCase):
             'servicechain_node': {
                 "name": "test-sc-node",
                 "description": "test service chain node resource",
-                "service_type": "TAP",
+                "service_profile_id": "profile-id",
                 "shared": True,
                 "config": "{'name': 'sc_node_config'}"
             }
