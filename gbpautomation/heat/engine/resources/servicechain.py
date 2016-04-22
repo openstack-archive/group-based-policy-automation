@@ -22,9 +22,11 @@ from neutronclient.common.exceptions import NeutronClientException
 class ServiceChainNode(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, SERVICE_TYPE, CONFIG, SHARED
+        TENANT_ID, NAME, DESCRIPTION, SERVICE_TYPE, SERVICE_PROFILE_ID,
+        CONFIG, SHARED
     ) = (
-        'tenant_id', 'name', 'description', 'service_type', 'config', 'shared'
+        'tenant_id', 'name', 'description', 'service_type',
+        'service_profile_id', 'config', 'shared'
     )
 
     properties_schema = {
@@ -45,6 +47,12 @@ class ServiceChainNode(gbpresource.GBPResource):
         SERVICE_TYPE: properties.Schema(
             properties.Schema.STRING,
             _('Type of service in the service chain node.'),
+            required=False,
+            update_allowed=True
+        ),
+        SERVICE_PROFILE_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('ID of the Service Profile for this Node.'),
             required=True,
             update_allowed=True
         ),
