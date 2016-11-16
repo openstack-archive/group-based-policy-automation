@@ -17,10 +17,10 @@ from gbpautomation.heat.engine.resources import grouppolicy
 from gbpclient.v2_0 import client as gbpclient
 from heat.common import exception
 from heat.common import template_format
-from heat.tests.common import HeatTestCase
-
 from heat.engine import scheduler
+from heat.tests.common import HeatTestCase
 from heat.tests import utils
+from neutronclient.v2_0 import client as neutronclient
 
 
 policy_target_template = '''
@@ -34,7 +34,12 @@ policy_target_template = '''
       "Properties": {
         "name": "test-policy-target",
         "policy_target_group_id": "ptg-id",
-        "description": "test policy target resource"
+        "description": "test policy target resource",
+        "port_id": "some-port-id",
+        "fixed_ips": [{
+          "subnet_id": "test-subnet",
+          "ip_address": "10.0.3.21"
+        }]
       }
     }
   }
@@ -84,7 +89,8 @@ l2_policy_template = '''
         "name": "test-l2-policy",
         "description": "test L2 policy resource",
         "l3_policy_id": "l3-policy-id",
-        "shared": True
+        "shared": True,
+        "reuse_bd": "other-l2p"
       }
     }
   }
@@ -311,6 +317,7 @@ class PolicyTargetTest(HeatTestCase):
         self.m.StubOutWithMock(gbpclient.Client, 'delete_policy_target')
         self.m.StubOutWithMock(gbpclient.Client, 'show_policy_target')
         self.m.StubOutWithMock(gbpclient.Client, 'update_policy_target')
+        self.m.StubOutWithMock(neutronclient.Client, 'show_subnet')
         self.stub_keystoneclient()
 
     def create_policy_target(self):
@@ -318,7 +325,11 @@ class PolicyTargetTest(HeatTestCase):
             'policy_target': {
                 'name': 'test-policy-target',
                 'policy_target_group_id': 'ptg-id',
-                "description": "test policy target resource"
+                "description": "test policy target resource",
+                "port_id": "some-port-id",
+                'fixed_ips': [
+                    {'subnet_id': u'sub1234', 'ip_address': u'10.0.3.21'}
+                ],
             }
         }).AndReturn({'policy_target': {'id': '5678'}})
 
@@ -340,7 +351,11 @@ class PolicyTargetTest(HeatTestCase):
             'policy_target': {
                 'name': 'test-policy-target',
                 'policy_target_group_id': 'ptg-id',
-                "description": "test policy target resource"
+                "description": "test policy target resource",
+                "port_id": "some-port-id",
+                'fixed_ips': [
+                    {'subnet_id': u'sub1234', 'ip_address': u'10.0.3.21'}
+                ],
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -610,7 +625,8 @@ class L2PolicyTest(HeatTestCase):
                 "name": "test-l2-policy",
                 "description": "test L2 policy resource",
                 "l3_policy_id": "l3-policy-id",
-                "shared": True
+                "shared": True,
+                "reuse_bd": "other-l2p",
             }
         }).AndReturn({'l2_policy': {'id': '5678'}})
 
@@ -633,7 +649,8 @@ class L2PolicyTest(HeatTestCase):
                 "name": "test-l2-policy",
                 "description": "test L2 policy resource",
                 "l3_policy_id": "l3-policy-id",
-                "shared": True
+                "shared": True,
+                "reuse_bd": "other-l2p",
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
