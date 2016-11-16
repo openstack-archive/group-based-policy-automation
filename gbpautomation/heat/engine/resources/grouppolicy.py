@@ -25,16 +25,22 @@ class PolicyTarget(gbpresource.GBPResource):
 
     PROPERTIES = (
         TENANT_ID, NAME, DESCRIPTION, POLICY_TARGET_GROUP_ID,
-        PORT_ID
+        PORT_ID, FIXED_IPS
     ) = (
         'tenant_id', 'name', 'description', 'policy_target_group_id',
-        'port_id'
+        'port_id', 'fixed_ips'
+    )
+
+    _FIXED_IP_KEYS = (
+        FIXED_IP_SUBNET_ID, FIXED_IP_IP_ADDRESS,
+    ) = (
+        'subnet_id', 'ip_address',
     )
 
     ATTRIBUTES = (
-        PORT_ID_ATTR
+        PORT_ID_ATTR, FIXED_IPS_ATTR
     ) = (
-        'port_id'
+        'port_id', 'fixed_ips'
     )
 
     properties_schema = {
@@ -62,13 +68,38 @@ class PolicyTarget(gbpresource.GBPResource):
             properties.Schema.STRING,
             _('Neutron port id of the policy target.'),
             update_allowed=False
-        )
+        ),
+        FIXED_IPS: properties.Schema(
+            properties.Schema.LIST,
+            _('Desired IPs for this port.'),
+            default=[],
+            schema=properties.Schema(
+                properties.Schema.MAP,
+                schema={
+                    FIXED_IP_SUBNET_ID: properties.Schema(
+                        properties.Schema.STRING,
+                    ),
+                    FIXED_IP_IP_ADDRESS: properties.Schema(
+                        properties.Schema.STRING,
+                        _('IP address desired in the subnet for this port.'),
+                        constraints=[
+                            constraints.CustomConstraint('ip_addr')
+                        ]
+                    ),
+                },
+            ),
+            update_allowed=True
+        ),
     }
 
     attributes_schema = {
         PORT_ID_ATTR: attributes.Schema(
             _('Neutron port id of this policy target.')
-        )
+        ),
+        FIXED_IPS_ATTR: attributes.Schema(
+            _("Fixed IP addresses."),
+            type=attributes.Schema.LIST
+        ),
     }
 
     def _show_resource(self):
@@ -83,6 +114,7 @@ class PolicyTarget(gbpresource.GBPResource):
         for key in self.properties:
             if self.properties.get(key) is not None:
                 props[key] = self.properties.get(key)
+        self._prepare_port_properties(props)
 
         pt = client.create_policy_target(
             {'policy_target': props})['policy_target']
@@ -105,6 +137,12 @@ class PolicyTarget(gbpresource.GBPResource):
         if prop_diff:
             self.grouppolicy().update_policy_target(
                 self.resource_id, {'policy_target': prop_diff})
+
+    def _prepare_port_properties(self, props):
+        for fixed_ip in props.get(self.FIXED_IPS, []):
+            for key, value in list(fixed_ip.items()):
+                if value is None:
+                    fixed_ip.pop(key)
 
 
 class PolicyTargetGroup(gbpresource.GBPResource):
@@ -258,9 +296,10 @@ class PolicyTargetGroup(gbpresource.GBPResource):
 class L2Policy(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, L3_POLICY_ID, SHARED
+        TENANT_ID, NAME, DESCRIPTION, L3_POLICY_ID, SHARED, REUSE_BD
     ) = (
-        'tenant_id', 'name', 'description', 'l3_policy_id', 'shared'
+        'tenant_id', 'name', 'description', 'l3_policy_id', 'shared',
+        'reuse_bd'
     )
 
     properties_schema = {
@@ -288,6 +327,11 @@ class L2Policy(gbpresource.GBPResource):
             properties.Schema.BOOLEAN,
             _('Shared.'),
             update_allowed=True, required=True
+        ),
+        REUSE_BD: properties.Schema(
+            properties.Schema.STRING,
+            _('Existing L2P ID in same L3P.'),
+            default=None, update_allowed=False
         )
     }
 
