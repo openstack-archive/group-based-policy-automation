@@ -46,6 +46,25 @@ policy_target_template = '''
 }
 '''
 
+
+policy_target_no_port_no_fixed_ip_template = '''
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test neutron policy target resource",
+  "Parameters" : {},
+  "Resources" : {
+    "policy_target": {
+      "Type": "OS::GroupBasedPolicy::PolicyTarget",
+      "Properties": {
+        "name": "test-policy-target",
+        "policy_target_group_id": "ptg-id",
+        "description": "test policy target resource",
+      }
+    }
+  }
+}
+'''
+
 policy_target_group_template = '''
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
@@ -340,6 +359,29 @@ class PolicyTargetTest(HeatTestCase):
 
     def test_create(self):
         rsrc = self.create_policy_target()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def create_policy_target_no_port_no_fixed_ip(self):
+        gbpclient.Client.create_policy_target({
+            'policy_target': {
+                'name': 'test-policy-target',
+                'policy_target_group_id': 'ptg-id',
+                "description": "test policy target resource",
+            }
+        }).AndReturn({'policy_target': {'id': '5678'}})
+
+        snippet = template_format.parse(
+            policy_target_no_port_no_fixed_ip_template)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
+        return grouppolicy.PolicyTarget(
+            'policy_target', resource_defns['policy_target'], self.stack)
+
+    def test_create_no_port_no_fixed_ip(self):
+        rsrc = self.create_policy_target_no_port_no_fixed_ip()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
