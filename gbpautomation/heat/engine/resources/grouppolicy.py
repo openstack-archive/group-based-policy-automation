@@ -72,7 +72,6 @@ class PolicyTarget(gbpresource.GBPResource):
         FIXED_IPS: properties.Schema(
             properties.Schema.LIST,
             _('Desired IPs for this port.'),
-            default=[],
             schema=properties.Schema(
                 properties.Schema.MAP,
                 schema={
