@@ -89,7 +89,8 @@ policy_target_group_template = '''
             {"policy_rule_set_id": "policy_rule_set4",
              "policy_rule_set_scope": "scope4"}
         ],
-        "shared": True
+        "shared": True,
+        "intra_ptg_allow": False
       }
     }
   }
@@ -516,7 +517,8 @@ class PolicyTargetGroupTest(HeatTestCase):
                     "policy_rule_set3": "scope3",
                     "policy_rule_set4": "scope4"
                 },
-                "shared": True
+                "shared": True,
+                "intra_ptg_allow": False
             }
         }).AndReturn({'policy_target_group': {'id': '5678'}})
 
@@ -548,7 +550,8 @@ class PolicyTargetGroupTest(HeatTestCase):
                     "policy_rule_set3": "scope3",
                     "policy_rule_set4": "scope4"
                 },
-                "shared": True
+                "shared": True,
+                "intra_ptg_allow": False
             }
         }).AndRaise(grouppolicy.NeutronClientException())
         self.m.ReplayAll()
@@ -623,6 +626,7 @@ class PolicyTargetGroupTest(HeatTestCase):
                     'policy_rule_set4': 'scope4',
                     'policy_rule_set6': 'scope6'
                 },
+                'intra_ptg_allow': True
             }})
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
@@ -645,6 +649,7 @@ class PolicyTargetGroupTest(HeatTestCase):
             {'policy_rule_set_id': 'policy_rule_set6',
              'policy_rule_set_scope': 'scope6'}
         ]
+        update_template['Properties']['intra_ptg_allow'] = True
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
