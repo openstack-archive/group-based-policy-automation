@@ -149,11 +149,12 @@ class PolicyTargetGroup(gbpresource.GBPResource):
 
     PROPERTIES = (
         TENANT_ID, NAME, DESCRIPTION, L2_POLICY_ID, PROVIDED_POLICY_RULE_SETS,
-        CONSUMED_POLICY_RULE_SETS, NETWORK_SERVICE_POLICY_ID, SHARED
+        CONSUMED_POLICY_RULE_SETS, NETWORK_SERVICE_POLICY_ID, SHARED,
+        INTRA_PTG_ALLOW
     ) = (
         'tenant_id', 'name', 'description', 'l2_policy_id',
         'provided_policy_rule_sets', 'consumed_policy_rule_sets',
-        'network_service_policy_id', 'shared'
+        'network_service_policy_id', 'shared', 'intra_ptg_allow'
     )
 
     properties_schema = {
@@ -195,6 +196,11 @@ class PolicyTargetGroup(gbpresource.GBPResource):
             properties.Schema.BOOLEAN,
             _('Shared.'),
             update_allowed=True, required=True
+        ),
+        INTRA_PTG_ALLOW: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Allow or disallow intra-ptg traffic.'),
+            update_allowed=True
         )
 
     }
