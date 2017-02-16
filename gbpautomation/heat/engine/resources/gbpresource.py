@@ -14,10 +14,6 @@
 from heat.common import exception
 from heat.engine import resource
 from heat.engine import scheduler
-from oslo_log import log as logging
-
-
-LOG = logging.getLogger(__name__)
 
 
 class GBPResource(resource.Resource):
