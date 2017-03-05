@@ -32,7 +32,8 @@ class GBPClientPlugin(client_plugin.ClientPlugin):
         args = {
             'auth_url': con.auth_url,
             'service_type': 'network',
-            'token': self.auth_token,
+            'token': con.keystone_session.get_token(),
+            'project_id': con.tenant_id,
             'endpoint_url': endpoint,
             'endpoint_type': endpoint_type,
             'ca_cert': self._get_client_option('grouppolicy', 'ca_file'),
