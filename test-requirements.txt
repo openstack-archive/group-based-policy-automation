@@ -2,25 +2,28 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 
--e git://github.com/openstack/heat.git@stable/mitaka#egg=heat
+-e git://github.com/openstack/heat.git@stable/newton#egg=heat
 -e git://git.openstack.org/openstack/python-group-based-policy-client.git@master#egg=gbpclient
 # Hacking already pins down pep8, pyflakes and flake8
 hacking<0.11,>=0.10.0
-bandit>=0.17.3 # Apache-2.0
+bandit>=1.1.0 # Apache-2.0
 coverage>=3.6 # Apache-2.0
-kombu>=3.0.25 # BSD
-mock>=1.2 # BSD
+fixtures>=3.0.0 # Apache-2.0/BSD
+kombu<4.0.0,>=3.0.25 # BSD
+mock>=2.0 # BSD
 mox3>=0.7.0 # Apache-2.0
-PyMySQL>=0.6.2 # MIT License
+PyMySQL!=0.7.7,>=0.6.2 # MIT License
+openstackdocstheme>=1.5.0 # Apache-2.0
+os-api-ref>=1.0.0 # Apache-2.0
 oslosphinx!=3.4.0,>=2.5.0 # Apache-2.0
 oslotest>=1.10.0 # Apache-2.0
-paramiko>=1.16.0 # LGPL
 qpid-python;python_version=='2.7' # Apache-2.0
 psycopg2>=2.5 # LGPL/ZPL
+python-glanceclient>=2.3.0,!=2.4.0,<2.6.0
 python-troveclient<2.6.0
-sphinx!=1.2.0,!=1.3b1,<1.3,>=1.1.2 # BSD
+sphinx!=1.3b1,<1.3,>=1.2.1 # BSD
 testrepository>=0.0.18 # Apache-2.0/BSD
 testscenarios>=0.4 # Apache-2.0/BSD
 testtools>=1.4.0 # MIT
 testresources>=0.2.4 # Apache-2.0/BSD
-reno>=0.1.1 # Apache2
+reno>=1.8.0 # Apache2
