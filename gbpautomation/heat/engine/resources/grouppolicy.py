@@ -21,6 +21,76 @@ from heat.engine import properties
 from neutronclient.common.exceptions import NeutronClientException
 
 
+class ApplicationPolicyGroup(gbpresource.GBPResource):
+
+    PROPERTIES = (
+        TENANT_ID, NAME, DESCRIPTION, SHARED
+    ) = (
+        'tenant_id', 'name', 'description', 'shared'
+    )
+
+    properties_schema = {
+        TENANT_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Tenant id of the Application Policy Group.')
+        ),
+        NAME: properties.Schema(
+            properties.Schema.STRING,
+            _('Name of the Application Policy Group.'),
+            update_allowed=True
+        ),
+        DESCRIPTION: properties.Schema(
+            properties.Schema.STRING,
+            _('Description of the Application Policy Group.'),
+            update_allowed=True
+        ),
+        SHARED: properties.Schema(
+            properties.Schema.BOOLEAN,
+            _('Shared.'),
+            update_allowed=True, required=True
+        )
+    }
+
+    def _show_resource(self):
+        client = self.grouppolicy()
+        application_policy_group_id = self.resource_id
+        return client.show_application_policy_group(
+            application_policy_group_id)['application_policy_group']
+
+    def handle_create(self):
+        client = self.grouppolicy()
+
+        props = {}
+        for key in self.properties:
+            if self.properties.get(key) is not None:
+                props[key] = self.properties.get(key)
+
+        application_policy_group = (
+            client.create_application_policy_group(
+                {'application_policy_group':
+                 props})['application_policy_group'])
+
+        self.resource_id_set(application_policy_group['id'])
+
+    def handle_delete(self):
+
+        client = self.grouppolicy()
+        application_policy_group_id = self.resource_id
+
+        try:
+            client.delete_application_policy_group(
+                application_policy_group_id)
+        except NeutronClientException as ex:
+            self.client_plugin().ignore_not_found(ex)
+        else:
+            return self._delete_task()
+
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        if prop_diff:
+            self.grouppolicy().update_application_policy_group(
+                self.resource_id, {'application_policy_group': prop_diff})
+
+
 class PolicyTarget(gbpresource.GBPResource):
 
     PROPERTIES = (
@@ -148,13 +218,14 @@ class PolicyTarget(gbpresource.GBPResource):
 class PolicyTargetGroup(gbpresource.GBPResource):
 
     PROPERTIES = (
-        TENANT_ID, NAME, DESCRIPTION, L2_POLICY_ID, PROVIDED_POLICY_RULE_SETS,
-        CONSUMED_POLICY_RULE_SETS, NETWORK_SERVICE_POLICY_ID, SHARED,
-        INTRA_PTG_ALLOW
+        TENANT_ID, NAME, DESCRIPTION, APPLICATION_POLICY_GROUP_ID,
+        L2_POLICY_ID, PROVIDED_POLICY_RULE_SETS, CONSUMED_POLICY_RULE_SETS,
+        NETWORK_SERVICE_POLICY_ID, SHARED, INTRA_PTG_ALLOW
     ) = (
-        'tenant_id', 'name', 'description', 'l2_policy_id',
-        'provided_policy_rule_sets', 'consumed_policy_rule_sets',
-        'network_service_policy_id', 'shared', 'intra_ptg_allow'
+        'tenant_id', 'name', 'description', 'application_policy_group_id',
+        'l2_policy_id', 'provided_policy_rule_sets',
+        'consumed_policy_rule_sets', 'network_service_policy_id', 'shared',
+        'intra_ptg_allow'
     )
 
     properties_schema = {
@@ -170,6 +241,11 @@ class PolicyTargetGroup(gbpresource.GBPResource):
         DESCRIPTION: properties.Schema(
             properties.Schema.STRING,
             _('Description of the policy target group.'),
+            update_allowed=True
+        ),
+        APPLICATION_POLICY_GROUP_ID: properties.Schema(
+            properties.Schema.STRING,
+            _('Application Policy Group id of the policy target group.'),
             update_allowed=True
         ),
         L2_POLICY_ID: properties.Schema(
