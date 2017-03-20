@@ -23,6 +23,25 @@ from heat.engine import scheduler
 from heat.tests import utils
 
 
+application_policy_group_template = '''
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test GBP application policy group",
+  "Parameters" : {},
+  "Resources" : {
+    "application_policy_group": {
+      "Type": "OS::GroupBasedPolicy::ApplicationPolicyGroup",
+      "Properties": {
+        "name": "test-application-policy-group",
+        "description": "test Application Policy Group resource",
+        "shared": True
+      }
+    }
+  }
+}
+'''
+
+
 policy_target_template = '''
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
@@ -76,6 +95,39 @@ policy_target_group_template = '''
       "Properties": {
         "name": "test-policy-target-group",
         "description": "test policy target group resource",
+        "l2_policy_id": "l2-policy-id",
+        "provided_policy_rule_sets": [
+            {"policy_rule_set_id": "policy_rule_set1",
+             "policy_rule_set_scope": "scope1"},
+            {"policy_rule_set_id": "policy_rule_set2",
+             "policy_rule_set_scope": "scope2"}
+        ],
+        "consumed_policy_rule_sets": [
+            {"policy_rule_set_id": "policy_rule_set3",
+             "policy_rule_set_scope": "scope3"},
+            {"policy_rule_set_id": "policy_rule_set4",
+             "policy_rule_set_scope": "scope4"}
+        ],
+        "shared": True,
+        "intra_ptg_allow": False
+      }
+    }
+  }
+}
+'''
+
+policy_target_group_with_apg_template = '''
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Template to test neutron policy target group resource",
+  "Parameters" : {},
+  "Resources" : {
+    "policy_target_group": {
+      "Type": "OS::GroupBasedPolicy::PolicyTargetGroup",
+      "Properties": {
+        "name": "test-policy-target-group",
+        "description": "test policy target group resource",
+        "application_policy_group_id": "apg-id",
         "l2_policy_id": "l2-policy-id",
         "provided_policy_rule_sets": [
             {"policy_rule_set_id": "policy_rule_set1",
@@ -329,6 +381,122 @@ nat_pool_template = '''
 '''
 
 
+class ApplicationPolicyGroupTest(HeatTestCase):
+
+    def setUp(self):
+        super(ApplicationPolicyGroupTest, self).setUp()
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'create_application_policy_group')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'delete_application_policy_group')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'show_application_policy_group')
+        self.m.StubOutWithMock(gbpclient.Client,
+                               'update_application_policy_group')
+        self.stub_keystoneclient()
+
+    def create_application_policy_group(self):
+        gbpclient.Client.create_application_policy_group({
+            'application_policy_group': {
+                "name": "test-application-policy-group",
+                "description": "test APG resource",
+                "shared": True
+            }
+        }).AndReturn({'application_policy_group': {'id': '5678'}})
+
+        snippet = template_format.parse(application_policy_group_template)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
+        return grouppolicy.ApplicationPolicyGroup(
+            'application_policy_group',
+            resource_defns['application_policy_group'], self.stack)
+
+    def test_create(self):
+        rsrc = self.create_application_policy_group()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_failed(self):
+        gbpclient.Client.create_application_policy_group({
+            'application_policy_group': {
+                "name": "test-application-policy-group",
+                "description": "test APG resource",
+                "shared": True
+            }
+        }).AndRaise(grouppolicy.NeutronClientException())
+        self.m.ReplayAll()
+
+        snippet = template_format.parse(application_policy_group_template)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
+        rsrc = grouppolicy.L3Policy(
+            'application_policy_group',
+            resource_defns['application_policy_group'], self.stack)
+
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.create))
+        self.assertEqual(
+            'NeutronClientException: resources.application_policy_group: '
+            'An unknown exception occurred.',
+            six.text_type(error))
+        self.assertEqual((rsrc.CREATE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete(self):
+        gbpclient.Client.delete_application_policy_group('5678')
+        gbpclient.Client.show_application_policy_group('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_application_policy_group()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_already_gone(self):
+        gbpclient.Client.delete_application_policy_group('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=404))
+
+        rsrc = self.create_application_policy_group()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        scheduler.TaskRunner(rsrc.delete)()
+        self.assertEqual((rsrc.DELETE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_delete_failed(self):
+        gbpclient.Client.delete_application_policy_group('5678').AndRaise(
+            grouppolicy.NeutronClientException(status_code=400))
+
+        rsrc = self.create_application_policy_group()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        error = self.assertRaises(exception.ResourceFailure,
+                                  scheduler.TaskRunner(rsrc.delete))
+        self.assertEqual(
+            'NeutronClientException: resources.application_policy_group: '
+            'An unknown exception occurred.',
+            six.text_type(error))
+        self.assertEqual((rsrc.DELETE, rsrc.FAILED), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_update(self):
+        rsrc = self.create_application_policy_group()
+        gbpclient.Client.update_application_policy_group(
+            '5678', {'application_policy_group': {'name': 'new name'}})
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+
+        update_template = copy.deepcopy(rsrc.t)
+        update_template['Properties']['name'] = 'name'
+        scheduler.TaskRunner(rsrc.update, update_template)()
+
+        self.m.VerifyAll()
+
+
 class PolicyTargetTest(HeatTestCase):
 
     def setUp(self):
@@ -529,8 +697,42 @@ class PolicyTargetGroupTest(HeatTestCase):
             'policy_target_group', resource_defns['policy_target_group'],
             self.stack)
 
+    def create_policy_target_group_with_apg(self):
+        gbpclient.Client.create_policy_target_group({
+            "policy_target_group": {
+                "name": "test-policy-target-group",
+                "description": "test policy target group resource",
+                "application_policy_group_id": "apg-id",
+                "l2_policy_id": "l2-policy-id",
+                "provided_policy_rule_sets": {
+                    "policy_rule_set1": "scope1",
+                    "policy_rule_set2": "scope2"
+                },
+                "consumed_policy_rule_sets": {
+                    "policy_rule_set3": "scope3",
+                    "policy_rule_set4": "scope4"
+                },
+                "shared": True,
+                "intra_ptg_allow": False
+            }
+        }).AndReturn({'policy_target_group': {'id': '5678'}})
+
+        snippet = template_format.parse(policy_target_group_with_apg_template)
+        self.stack = utils.parse_stack(snippet)
+        resource_defns = self.stack.t.resource_definitions(self.stack)
+        return grouppolicy.PolicyTargetGroup(
+            'policy_target_group', resource_defns['policy_target_group'],
+            self.stack)
+
     def test_create(self):
         rsrc = self.create_policy_target_group()
+        self.m.ReplayAll()
+        scheduler.TaskRunner(rsrc.create)()
+        self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
+        self.m.VerifyAll()
+
+    def test_create_with_apg(self):
+        rsrc = self.create_policy_target_group_with_apg()
         self.m.ReplayAll()
         scheduler.TaskRunner(rsrc.create)()
         self.assertEqual((rsrc.CREATE, rsrc.COMPLETE), rsrc.state)
