@@ -137,9 +137,6 @@ class GBPResource(resource.Resource):
                 self.client_plugin().ignore_not_found(ex)
                 return
 
-    def FnGetRefId(self):
-        return unicode(self.resource_id)
-
     def _delete_task(self):
         delete_task = scheduler.TaskRunner(self._confirm_delete)
         delete_task.start()
