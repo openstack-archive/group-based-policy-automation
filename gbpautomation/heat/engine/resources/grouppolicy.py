@@ -580,6 +580,9 @@ class PolicyClassifier(gbpresource.GBPResource):
         'direction', 'shared'
     )
 
+    protocols_list = ['tcp', 'udp', 'icmp', None]
+    protocols_list.extend([str(protocol_num) for protocol_num in range(256)])
+
     properties_schema = {
         TENANT_ID: properties.Schema(
             properties.Schema.STRING,
@@ -599,7 +602,7 @@ class PolicyClassifier(gbpresource.GBPResource):
             properties.Schema.STRING,
             _('Protocol of traffic described by the policy classifier.'),
             constraints=[
-                constraints.AllowedValues(['tcp', 'udp', 'icmp', None])
+                constraints.AllowedValues(protocols_list)
             ],
             update_allowed=True
         ),
