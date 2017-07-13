@@ -491,7 +491,7 @@ class ApplicationPolicyGroupTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['name'] = 'new name'
+        update_template._properties['name'] = 'new name'
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -654,7 +654,7 @@ class PolicyTargetTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['policy_target_group_id'] = (
+        update_template._properties['policy_target_group_id'] = (
             'ptg_id_update')
         scheduler.TaskRunner(rsrc.update, update_template)()
 
@@ -834,8 +834,8 @@ class PolicyTargetGroupTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['l2_policy_id'] = 'l2_id_update'
-        update_template['Properties']['provided_policy_rule_sets'] = [
+        update_template._properties['l2_policy_id'] = 'l2_id_update'
+        update_template._properties['provided_policy_rule_sets'] = [
             {'policy_rule_set_id': 'policy_rule_set1',
              'policy_rule_set_scope': 'scope1'},
             {'policy_rule_set_id': 'policy_rule_set2',
@@ -843,7 +843,7 @@ class PolicyTargetGroupTest(HeatTestCase):
             {'policy_rule_set_id': 'policy_rule_set5',
              'policy_rule_set_scope': 'scope5'}
         ]
-        update_template['Properties']['consumed_policy_rule_sets'] = [
+        update_template._properties['consumed_policy_rule_sets'] = [
             {'policy_rule_set_id': 'policy_rule_set3',
              'policy_rule_set_scope': 'scope3'},
             {'policy_rule_set_id': 'policy_rule_set4',
@@ -851,7 +851,7 @@ class PolicyTargetGroupTest(HeatTestCase):
             {'policy_rule_set_id': 'policy_rule_set6',
              'policy_rule_set_scope': 'scope6'}
         ]
-        update_template['Properties']['intra_ptg_allow'] = True
+        update_template._properties['intra_ptg_allow'] = True
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -965,7 +965,7 @@ class L2PolicyTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['l3_policy_id'] = 'l3_id_update'
+        update_template._properties['l3_policy_id'] = 'l3_id_update'
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -1085,8 +1085,8 @@ class L3PolicyTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['subnet_prefix_length'] = 28
-        update_template['Properties']['external_segments'] = [
+        update_template._properties['subnet_prefix_length'] = 28
+        update_template._properties['external_segments'] = [
             {'external_segment_id': 'es2',
              'allocated_address': '2.1.1.1'}]
         scheduler.TaskRunner(rsrc.update, update_template)()
@@ -1210,7 +1210,7 @@ class PolicyClassifierTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['protocol'] = 'udp'
+        update_template._properties['protocol'] = 'udp'
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -1324,7 +1324,7 @@ class PolicyActionTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['action_type'] = 'allow'
+        update_template._properties['action_type'] = 'allow'
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -1440,7 +1440,7 @@ class PolicyRuleTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['enabled'] = False
+        update_template._properties['enabled'] = False
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -1556,7 +1556,7 @@ class PolicyRuleSetTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['child_policy_rule_sets'] = ["1234"]
+        update_template._properties['child_policy_rule_sets'] = ["1234"]
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -1679,7 +1679,7 @@ class NetworkServicePolicyTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['network_service_params'] = [
+        update_template._properties['network_service_params'] = [
             {'name': 'vip-update'}]
         scheduler.TaskRunner(rsrc.update, update_template)()
 
@@ -1825,9 +1825,9 @@ class ExternalPolicyTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['external_segments'] = [
+        update_template._properties['external_segments'] = [
             '9876']
-        update_template['Properties']['provided_policy_rule_sets'] = [
+        update_template._properties['provided_policy_rule_sets'] = [
             {'policy_rule_set_id': '2345',
              'policy_rule_set_scope': 'scope1'},
             {'policy_rule_set_id': '8901',
@@ -1835,7 +1835,7 @@ class ExternalPolicyTest(HeatTestCase):
             {'policy_rule_set_id': '1122',
              'policy_rule_set_scope': 'scope5'}
         ]
-        update_template['Properties']['consumed_policy_rule_sets'] = [
+        update_template._properties['consumed_policy_rule_sets'] = [
             {'policy_rule_set_id': '9012',
              'policy_rule_set_scope': 'scope3'},
             {'policy_rule_set_id': '9210',
@@ -1975,7 +1975,7 @@ class ExternalSegmentTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['port_address_translation'] = False
+        update_template._properties['port_address_translation'] = False
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -2098,7 +2098,7 @@ class NATPoolTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['external_segment_id'] = '9876'
+        update_template._properties['external_segment_id'] = '9876'
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()

@@ -195,7 +195,7 @@ class ServiceChainNodeTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['name'] = 'node_update'
+        update_template._properties['name'] = 'node_update'
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -309,7 +309,7 @@ class ServiceChainSpecTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['name'] = 'spec_update'
+        update_template._properties['name'] = 'spec_update'
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
@@ -428,7 +428,7 @@ class ServiceProfileTest(HeatTestCase):
         scheduler.TaskRunner(rsrc.create)()
 
         update_template = copy.deepcopy(rsrc.t)
-        update_template['Properties']['name'] = 'profile_update'
+        update_template._properties['name'] = 'profile_update'
         scheduler.TaskRunner(rsrc.update, update_template)()
 
         self.m.VerifyAll()
