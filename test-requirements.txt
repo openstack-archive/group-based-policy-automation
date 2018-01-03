@@ -3,7 +3,7 @@
 # process, which may cause wedges in the gate later.
 
 -e git://github.com/openstack/heat.git@stable/pike#egg=heat
--e git://git.openstack.org/openstack/python-group-based-policy-client.git@master#egg=gbpclient
+-e git://git.openstack.org/openstack/python-group-based-policy-client.git@stable/pike#egg=gbpclient
 # Hacking already pins down pep8, pyflakes and flake8
 hacking<0.11,>=0.10.0
 bandit>=1.1.0 # Apache-2.0
